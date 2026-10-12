@@ -14,8 +14,10 @@ plan, and only creates after you confirm.
 - A **personal access token** (My Account Settings → Personal Access Tokens).
 - Python 3 on your PATH (`python3 --version`). Standard library only — nothing
   to install.
-- macOS for Keychain storage. On other systems, set `TABLEAU_PAT_SECRET` in
-  your shell instead.
+- macOS for Keychain storage. On other systems the storage step isn't available;
+  set `TABLEAU_PAT_SECRET` in your shell instead, in the same Terminal session
+  that runs the agent (for example `read -s TABLEAU_PAT_SECRET && export
+  TABLEAU_PAT_SECRET` in bash or zsh). The secret still never goes in chat.
 
 ## First run
 
@@ -43,8 +45,9 @@ name → delete, or
 
 ## Good to know
 
-- The first Pulse definition on a data source usually has to be made in the
-  Pulse UI; after that the skill can add the rest.
+- The Pulse API sometimes rejects the first definition on a data source. The
+  skill tries it anyway; if it is rejected, create any one metric in the Pulse UI,
+  then the skill can add the rest.
 - Every metric needs at least one categorical dimension to filter by.
 - Aggregate calcs (like a profit ratio) are created with aggregation `USER`
   (the UI's "Calculated"); the script sets it for you. SUM on one returns no value.
@@ -54,6 +57,13 @@ name → delete, or
 
 - `SKILL.md` — the agent's procedure
 - `scripts/pulse.py` — the API client (run with `--help`)
-- `references/api-notes.md` — Pulse API rules and error causes
-- `references/studio-card.md` — Pulse Metric dashboard object XML
+- `references/setup.md` — sign-in setup details
+- `references/before-you-begin.md` — the optional checklist
+- `references/data-source-check.md` — published or local data source cases
+- `references/data-shapes.md` — suggesting measures; unusual data sources
+- `references/spec-fields.md` — spec keys, time field, locked defaults
 - `references/spec-example.json` — metric spec template
+- `references/output-formats.md` — the plan and report layouts
+- `references/api-notes.md` — Pulse API rules and error causes
+- `references/placing-cards.md` — putting Pulse cards on a dashboard
+- `references/studio-card.md` — Pulse Metric dashboard object XML

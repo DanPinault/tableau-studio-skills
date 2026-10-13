@@ -1,0 +1,6 @@
+.vendored/
+.build/
+.claude/
+.DS_Store
+*.zip
+__pycache__/

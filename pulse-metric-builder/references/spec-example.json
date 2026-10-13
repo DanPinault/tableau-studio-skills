@@ -1,0 +1,41 @@
+{
+  "defaults": {
+    "datasource": "<published data source LUID from `datasources`>",
+    "time_dimension": "Order Date",
+    "dimensions": ["Region", "Category"],
+    "period": "ytd",
+    "sentiment": "UP",
+    "format": "NUMBER"
+  },
+  "metrics": [
+    {
+      "name": "Sales",
+      "measure": "Sales",
+      "aggregation": "SUM",
+      "format": "CURRENCY",
+      "currency": "USD",
+      "description": "Total sales across all regions."
+    },
+    {
+      "name": "Orders",
+      "measure": "Order ID",
+      "aggregation": "COUNT_DISTINCT",
+      "units": ["order", "orders"]
+    },
+    {
+      "name": "Returned Orders",
+      "measure": "Order ID",
+      "aggregation": "COUNT_DISTINCT",
+      "sentiment": "DOWN",
+      "units": ["order", "orders"],
+      "filters": [{"field": "Returned", "values": ["Yes"]}]
+    },
+    {
+      "name": "Profit Ratio",
+      "measure": "Profitable Order Flag",
+      "aggregation": "AVERAGE",
+      "format": "PERCENT",
+      "description": "Share of orders with positive profit. Averages a row-level 1/0 calc."
+    }
+  ]
+}

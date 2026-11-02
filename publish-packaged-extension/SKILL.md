@@ -1,33 +1,9 @@
 ---
 name: publish-packaged-extension
-description: Use when the user wants to publish a workbook to Tableau Cloud or Tableau Server, whether it is the workbook open in Studio, a .twbx file they name, or an unzipped data-app folder (a .twb next to a Packages/ folder). Phrases like "publish this workbook", "publish this workbook to Tableau", "publish this with the extension", "publish my data app", "publish Sales.twbx to Finance", "publish this workbook to project X as Y", "the extension disappears when I publish", or "Cloud says the embedded extension was removed when the workbook was downgraded". Checks the sign-in and connection to the connected site, always asks for the site, project and name before publishing, and publishes with publish-workbook. When the workbook carries a packaged extension it first runs a bundled fix-up script on a copy so the extension survives, then checks the published copy. Do NOT use to build or edit the extension itself (use author-extension or scrollytelling-demo-builder).
+description: Use when the user wants to publish a workbook to Tableau Cloud or Tableau Server, whether it is the workbook open in Studio, a .twbx file they name, or an unzipped data-app folder (a .twb next to a Packages/ folder). Phrases like "publish this workbook", "publish this workbook to Tableau", "publish this with the extension", "publish my data app", "publish Sales.twbx to Finance", "publish this workbook to project X as Y", "the extension disappears when I publish", or "Cloud says the embedded extension was removed when the workbook was downgraded". Checks the sign-in and connection to the connected site, always asks for the site, project and name before publishing, and publishes with publish-workbook. When the workbook carries a packaged extension it first runs a bundled fix-up script on a copy so the extension survives, then checks the published copy. Do NOT use to build or edit the extension itself (use author-extension or scrollytelling-demo-builder), to speed up or clean up a workbook before publishing (use workbook-optimizer), or to build charts and dashboards (use tableau-desktop-authoring); this skill only publishes and checks the published copy.
 ---
 
 # Packaged extension publish
-
-## Update check (run before everything else, including Step 0)
-
-Before anything else, run:
-
-```
-python3 "<this skill folder>/scripts/check_update.py" check
-```
-
-It prints JSON and never fails. Read `status`:
-
-- `up_to_date`, `unknown` (offline) or `snoozed`: say nothing about updates and continue.
-- `update_available`: stop and tell the user a newer version of this skill is
-  available (`local` → `remote`), with a one-line summary of `changes`. Ask which
-  they want, as plain text at the end of your message (do not use `ask-user`):
-  **install now**, **skip this time**, or **don't remind me about this version**.
-  Wait for the answer.
-  - Install: run `python3 "<this skill folder>/scripts/check_update.py" apply`.
-    On `ok: true`, tell them it updated (the old copy is saved at `backup`), ask
-    them to run `/reload-skills`, then re-send their request so the new version
-    runs. Stop there. On `ok: false`, show the error and continue with the
-    current version.
-  - Skip: continue the task.
-  - Don't remind me: run `... check_update.py snooze`, then continue.
 
 This is a Tableau Studio agent skill. It runs inside Studio's agent and
 publishes through Studio's `tableau-web` MCP, which uses Studio's own sign-in
@@ -101,17 +77,12 @@ Out of scope, and what to do instead:
 
 ## Steps
 
-### 0. Tell the user the plan
+### 0. Order of work
 
-Before calling any tool, write one or two plain sentences as the first text of
-your reply: what you'll do and in what order. Name the workbook. For example:
-
-> I'll check that Studio is signed in to your Tableau site, save a fixed-for-publish copy of **<workbook>** so the extension survives, then ask where to publish. After you answer I'll publish the copy and check the extension is still in it.
-
-Leave out steps that don't apply (for example, saving a copy when they gave
-you a `.twbx`). Then carry on without waiting; the only stop is step 4. The
-order is fixed: finish step 1 (sign-in check) before step 2 (export), and
-never export or run the script until the check has passed.
+Start with the steps below; no opening sentence is required. Carry on without
+waiting; the only stop is step 4. The order is fixed: finish step 1 (sign-in
+check) before step 2 (export), and never export or run the script until the
+check has passed.
 
 ### 1. Check the Tableau Cloud sign-in and MCP connection
 
@@ -204,9 +175,11 @@ are fixed, so two runs give the same question:
 
 - **Project default:** the project the user named in this conversation. If
   they named none, suggest nothing and list every publishable project from
-  the step 1 result, never a subset. Order them alphabetically as well as you
-  can (case-insensitive, ignoring a leading dot); the order is a convenience,
-  so a small slip is fine, but a missing project or a wrong parent is not.
+  the step 1 result, never a subset. Sort them with this exact rule: compare
+  names case-insensitively after removing one leading dot; break ties by the
+  original name. Write the sorted names out one by one and check each against
+  the previous one before sending. A missing project or a wrong parent is a
+  failed answer.
   Show a nested project as "<name> (in <parent name>)", using each project's
   parent from the step 1 result. Say how many projects there are in total, and
   print every name in the message: a count without the names is wrong. With
@@ -215,14 +188,18 @@ are fixed, so two runs give the same question:
 - **Workbook name default:** the input file's name without `.twbx` and
   without `.fixed-for-publish` (for the open workbook, its name in Studio).
 
-For example:
+Use this template exactly, filling only the angle-bracket parts. Put the
+project names on separate lines, in sorted order:
 
 > Where should I publish it?
-> - **Site:** <the site Studio is signed in to, or "the site Studio is signed in to">
-> - **Project:** <suggested project> (you can publish to: <project names from step 1>)
+> - **Site:** <the site Studio is signed in to>
 > - **Workbook name:** <workbook name>
+> - **Project:** <suggested project, or "choose one of the <total> below">
 >
-> Reply "yes" to use these, or tell me what to change.
+> <one project per line, "<name>" or "<name> (in <parent>)", only when there is no project default>
+>
+> <With a project default: Reply "yes" to use these, or tell me what to change. Without one: Reply with a project, plus a different name if you want one.>
+> Before publishing, I'll check whether a workbook with that name already exists there.
 
 - **Site.** `tableau-web` publishes only to the site Studio is signed in to,
   so a site can't be picked here. Show that site if you can tell which it is
@@ -323,6 +300,14 @@ Use this shape for the final message, one block per workbook:
 
 Then offer the cleanup from **Clean up** below in the same message.
 
+Overflow rules:
+- With more than 3 workbooks, put one summary line first: "<n> published and
+  verified, <m> published but not verified, <k> not published." Then the blocks,
+  in the order the user gave the workbooks.
+- A workbook that was not published still gets a block, with "Not published:"
+  in place of the status words and the reason on the next line.
+- Put the cleanup offer once, after all blocks.
+
 If the extension doesn't load, or loads but shows nothing, go through these in
 order. All but the last are in **Site Settings > Packages** and need a site admin:
 
@@ -369,14 +354,25 @@ anything older than 2026.3 as the likely cause.
 - Ending a batch with prose and links instead of one status line per
   workbook. Each workbook gets "Published and verified" or "Published, not
   verified" on its own line, followed by its link (Step 7).
-
 - Publishing before a requested extension edit is made. Edit first, then
   export and fix, so the published copy includes the edit (Scope).
-- Starting tool calls without first writing the one or two plan sentences
-  from step 0.
 - Offering to delete the original export (`<name>.twbx`) when the user stops
   or finishes. Only the `.fixed-for-publish.twbx` and `server-copy.twbx` may be offered
   for deletion (Clean up).
+
+## Check before sending
+
+Run this on the step 4 question and on the final message, silently, before you
+send either:
+1. The step 4 question follows the step 4 template: site, name, project, then
+   (with no project default) every project from step 1 on its own line, sorted
+   by the rule above, with the total and "(in <parent>)" on nested ones. With
+   no project default it says "Reply with a project", not "Reply yes".
+2. The final message uses exactly "Published and verified" or "Published, not
+   verified" (or "Not published:" for a skipped one), one block per workbook,
+   with its link on the next line, plus the summary line for more than 3.
+3. No upload or download link, project ID or script name appears in the text.
+Fix any miss before sending; don't mention the check.
 
 ## Clean up
 
@@ -407,6 +403,31 @@ only if the user says yes, and never delete the original export.
   verified"). A failure in one workbook doesn't stop the rest. Never re-send a
   publish that returned an unclear result: check the site with `list-workbooks`
   first.
+
+## Update check (last step)
+
+Run this once, after the step 7 hand-back message or after a clean stop (for
+example the user replies "stop" at the step 4 question). Never run it before or
+during the publish steps, and never delay the step 4 question for it.
+
+```
+python3 "<this skill folder>/scripts/check_update.py" check
+```
+
+It prints JSON and never fails. Read `status`:
+
+- `up_to_date`, `unknown` (offline) or `snoozed`: say nothing about updates.
+- `update_available`: add a short note after your result: a newer version of this
+  skill is available (`local` → `remote`), with a one-line summary of `changes`.
+  Ask which they want, as plain text at the end of your message (do not use
+  `ask-user`): **install now**, **skip this time**, or **don't remind me about
+  this version**. Wait for the answer.
+  - Install: run `python3 "<this skill folder>/scripts/check_update.py" apply`.
+    On `ok: true`, tell them it updated (the old copy is saved at `backup`) and
+    ask them to run `/reload-skills`. On `ok: false`, show the error and keep the
+    current version.
+  - Skip: do nothing more.
+  - Don't remind me: run `... check_update.py snooze`.
 
 ## Notes
 

@@ -3,6 +3,28 @@
 The current version is in the `VERSION` file. The skill offers to update itself
 when launched; or replace this folder with the newer one and run `/reload-skills`.
 
+## 1.2.1 — 2026-11-02
+
+- Safer unpacking in the update script (`scripts/check_update.py`).
+- Tidied two formatting nits in `SKILL.md`. No change in behavior.
+
+## 1.2.0 — 2026-11-02
+
+- The update check now runs last, after the final message or a clean stop, so
+  it can never delay the sign-in check or the project question.
+- Dropped the required opening plan sentence. It was skipped in every test run
+  however it was worded, so the project question now carries that job.
+- Step 4 project list: exact sort rule (case-insensitive, one leading dot
+  ignored, ties by original name), with the total and parents on nested ones.
+- New pre-send check on the project question and the final message.
+- The step 4 question is now a fixed template (site, name, project, one project
+  per line), the description names what the skill does not do (workbook-optimizer,
+  tableau-desktop-authoring), and batches of more than 3 get a summary line.
+- Tested: a plain workbook with `stop` at the project question, a project that
+  doesn't exist, and a request that names project and name up front. All pass,
+  nothing published. A workbook with a packaged extension and a real publish
+  were not retested in this round.
+
 ## 1.1.0 — 2026-11-02
 
 Update check on launch: the skill now checks the DanPinault/tableau-studio-skills
@@ -29,4 +51,5 @@ the ask-first check.
 ### Known limits
 - Tableau Server publishing is untested; the Server check is a link-domain
   heuristic.
-- The plan sentence is sometimes missing, and the project order can slip.
+- (1.0.0) The plan sentence is sometimes missing, and the project order can
+  slip. Fixed in 1.2.0: no plan sentence is required, and the sort rule is exact.

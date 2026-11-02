@@ -3,6 +3,50 @@
 The current version is in the `VERSION` file. The skill offers to update itself
 when launched; or replace this folder with the newer one and run `/reload-skills`.
 
+## 1.3.2 — 2026-11-02
+
+From a full 1.3.1 run through publish (worked end to end; live numbers verified).
+
+- Seasonality check when there is no move start: a measure that qualifies on
+  first-14 vs last-14 but not on first vs last full calendar year is "noise
+  (seasonal)" and can't be the lead signal, so the proposal matches the build.
+- Outline only after the delivery answer, for the chosen mode; verdict cells are
+  exactly "qualifies" or "noise"; a final message is sent once.
+- Completion report: Blocked whenever a manual check is left; no package id.
+- No update remark when the local version is newer than the remote.
+
+## 1.3.1 — 2026-11-02
+
+Fixes from two fresh-chat runs of 1.3.0 (same answers; the pinned Step 0 text
+matched in both, but later steps differed).
+
+- Window rule is now numeric: baseline = mean and SD of the first 14 periods; move
+  start = first period from which the 7-period trailing average stays more than
+  3 SD from the baseline mean through the latest period. If none qualifies, the
+  window is the full history, with a note, and is still confirmed with the user.
+- Measures probed: count every numeric measure the datasource lists, including
+  calculated ratios, as "N of N"; no extra measures such as row counts. Divergence
+  is tested on every pair.
+- Datasource question pinned; the audience is asked once (in the style question).
+- Style question: nothing after the two Optional lines.
+- Pinned clean-stop reply; scratch files are deleted silently. Messages never say
+  "the build procedure".
+
+## 1.3.0 — 2026-11-02
+
+Re-graded 85.1 (B); this release addresses the three biggest gaps. Not yet
+retested in fresh chats.
+
+- The update check now runs last, after the final message or a clean stop, so it
+  can't delay the orientation in Step 0.
+- The orientation paragraph and the delivery-mode, prompting-level and style
+  questions are now fixed wording, one question at a time. New "Check before
+  sending" for Step 0 and the proposal.
+- New gate item: before the first publish, check the project for a different
+  workbook with the same name (the publish command overwrites without asking).
+- Removed two duplicated rules from "Common mistakes", and the scratch folder is
+  now described relative to the skills folder instead of a personal path.
+
 ## 1.2.1 — 2026-11-02
 
 - Safer unpacking in the update script (`scripts/check_update.py`). No change in

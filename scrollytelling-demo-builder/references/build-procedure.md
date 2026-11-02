@@ -28,8 +28,15 @@ feeder sheet.
 
 ## 1. Connect the published datasource — [needs you]
 
-Ask the user which published datasource to use. Connecting/authorizing is their
-action (sign-in, credential, or selecting it in Studio). Confirm you can query it
+Ask which published datasource to use, with this wording and nothing else
+(the audience was already asked in Step 0, so do not ask it here):
+
+> Which published datasource should the story use? Here are the first six on your site:
+> <up to six names, one per line, in the order the site returns them>
+> Or name any other one.
+
+Connecting/authorizing is their action (sign-in, credential, or selecting it in
+Studio). Confirm you can query it
 before proceeding. Your read/query path is `mcp__tableau-web__query-datasource`
 (VizQL Data Service) — it is query-only; it cannot publish or write.
 
@@ -108,8 +115,14 @@ action triggers corruption if it recurs, instead of losing the whole dashboard.
   - **Trend:** a measure trends if its last-period value differs from its
     first-period value by more than 10% (relative), in one direction, with no
     more than one direction reversal across the window.
-  - **Divergence:** two related measures diverge if one rises more than 5% while
-    the other falls more than 5% over the same window.
+  - **Divergence:** two measures diverge if one rises more than 5% while the
+    other falls more than 5% over the same window. Test every pair of numeric
+    measures (a pair counts as related when both are in the same datasource) and
+    list each pair that diverges, with both changes.
+  - **Measures probed:** count every numeric measure the datasource lists,
+    including calculated ratio measures (computed as the sum of the numerator over
+    the sum of the denominator). State "N of N" from that list. Do not add
+    measures of your own, such as row counts, to the count.
   - **Concentration:** the top 3 members hold more than 50% of the total.
   - **Anomaly:** a point more than 3 standard deviations from the window mean.
   - **Not a signal:** anything under these thresholds is noise. Do not build a
@@ -149,10 +162,25 @@ action triggers corruption if it recurs, instead of losing the whole dashboard.
   1. Lead signal: the qualifying signal with the largest relative change. Ties
      break in this order: divergence, trend, concentration, anomaly. Other
      qualifying signals become supporting chapters.
-  2. Move start: the first period where the lead measure leaves its pre-move
-     average by more than 3 standard deviations and stays out.
+  2. Move start (compute it numerically, never by eye). Baseline: the mean and
+     standard deviation of the lead measure over the first 14 periods. Move
+     start: the first period from which the 7-period trailing average of the lead
+     measure stays more than 3 baseline standard deviations away from the
+     baseline mean, in the direction of the move, through the latest period. If
+     no period qualifies there is no move start (a steady climb with seasonal
+     spikes often has none): say so with the numbers and go to step 3b.
   3. Window start: 14 periods before the move start. Window end: the latest
      complete period (mark a partial final period as partial).
+  3b. No move start: the window is the full history. Say it is a steady change
+     with no step, and note that comparing the first 14 and last 14 periods can be
+     partly seasonal. The window is still confirmed with the user.
+     Seasonality check (only here): for every measure that qualified, also
+     compare its average per period in the first full calendar year with the
+     last full calendar year, using the same thresholds. A measure that
+     qualifies on first-14 vs last-14 but not on the yearly comparison is
+     "noise (seasonal)", and it cannot be the lead signal or the basis of a
+     divergence. Lead signal and chapters are then chosen from what remains,
+     before the proposal, so the proposal and the build tell the same story.
   4. Never widen the window past 3 times the length of that move. If the full
      history is shorter than 14 periods, use it and say so.
   5. If no signal meets the locked thresholds over this window, treat it as

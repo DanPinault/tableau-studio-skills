@@ -120,6 +120,10 @@ python3 assets/package_extension.py publish --twbx "<scratch>/<Story Name>.twbx"
   a server-side render of the view with `--image`.
 - Publishing to a project is outward-facing. Confirm the project with the user
   before the first publish, then re-publish freely while iterating.
+- `publish` overwrites a same-name workbook without asking. Before the first
+  publish, search the project for a workbook with that name; if one exists that
+  this run did not create, name it and ask whether to overwrite it or use another
+  name.
 
 ## Verify (both are required)
 

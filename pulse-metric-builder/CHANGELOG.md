@@ -3,6 +3,15 @@
 The current version is in the `VERSION` file. The skill offers to update itself
 when launched; or replace this folder with the newer one and run `/reload-skills`.
 
+## 1.2.5 — 2026-11-02
+
+- Tested the full path on a real measure (Profit): plan, create, read-back,
+  value check ($24.3K YTD) and one card on a dashboard. All passed.
+- The time-field note now allows nothing after its fixed sentence (a run added
+  its reasoning and a remark about another metric).
+- A blank or covered card: screenshot once more, and if still unconfirmed say so
+  and give the metric link as the fallback.
+
 ## 1.2.4 — 2026-11-02
 
 - Tested 1.2.3 with two fresh chats on Profit: introduction, options, name,

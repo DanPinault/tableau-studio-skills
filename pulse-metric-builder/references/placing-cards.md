@@ -58,5 +58,5 @@ pointing at a deleted metric must be re-pointed.
 | The published data source isn't in the workbook | Stop. The user connects it (Data > New Data Source > Tableau Server / Tableau Cloud), then re-read the workbook and continue. |
 | Save fails with "no visual representation" | Undo with `undo-workbook`. A hand-written worksheet zone is the usual cause; use `add-sheet-to-dashboard` instead. |
 | Dashboard image export returns an error | Expected with Pulse zones present. Check the result with `capture-window-screenshot` instead. |
-| Card is blank right after a change | Usually reloading. Screenshot again, then check that the user saw a value at the metric's `pulse_url`. |
+| Card is blank right after a change, or the agent pane covers the dashboard | Usually reloading or hidden. Screenshot once more after a few seconds. If it is still blank or covered, don't say it worked: say you couldn't confirm it, ask the user to close the agent pane or switch to presentation mode and check for the value, and give the metric's `pulse_url` as the fallback. |
 | Last card is pushed off-screen on a wide dashboard | Shrink the card widths so they split the strip evenly, then re-apply. |

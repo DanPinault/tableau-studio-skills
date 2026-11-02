@@ -124,7 +124,9 @@ end. Example: for a data source named `Superstore_orders`, AVERAGE of Sales is
 **Time-field note in the plan** (always this wording, filling in the names): "Time
 field: <chosen field>. Other date fields: <the rest, comma-separated, in the order
 `fields` lists them, or none>. It
-can't be changed later without deleting and recreating the metric."
+can't be changed later without deleting and recreating the metric." Add nothing
+after it: no reasons for the choice and no remarks about other date fields or other
+metrics.
 
 ## More locked choices
 

@@ -1,0 +1,1711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>3PL Finance — The Quiet Erosion · CFO Brief</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="https://tableau.github.io/extensions-api/lib/tableau.extensions.1.latest.js" async></script>
+<style>
+  /* ============================================================
+     "The Quiet Erosion" — dark scrollytelling CFO brief.
+     Same dark keynote skin as the COO brief (coo-brief.html):
+     near-black canvas, teal→purple→magenta gradient, glow,
+     count-up, serif headlines, sticky dot-nav, progress bar.
+     DIFFERENT scrolly device: instead of numbered chapters, this
+     opens with a PINNED diverging-lines graphic that a reader
+     scroll-drives through states, then acts flow as scenes
+     (waterfall bridge → leak quadrant → facilities → run-rate).
+     Same data contract as coo-brief (SEED / __LIVE__ / api/metrics),
+     but its own cfo_feed_data feeder + CFO measures.
+     ============================================================ */
+  :root{
+    --bg0:#05060e; --bg1:#0a0c1a;
+    --panel:rgba(255,255,255,.03); --panel-brd:rgba(140,150,200,.10);
+    --white:#F5F7FF; --muted:#9AA6D6; --dim:#5b638f;
+    --teal:#35E0D0; --purple:#8B7BFF; --magenta:#F25FD0; --amber:#F5B24B; --red:#FF6B6B; --gold:#F3C556; --green:#5AE0A0;
+    --grad:linear-gradient(90deg,var(--teal),var(--purple));
+    --grad3:linear-gradient(90deg,var(--teal),var(--purple),var(--magenta));
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+    color:var(--white); -webkit-font-smoothing:antialiased; min-height:100%;
+    background:
+      radial-gradient(1200px 700px at 82% -6%, rgba(242,95,208,.13) 0%, rgba(242,95,208,0) 55%),
+      radial-gradient(1000px 620px at 4% 30%, rgba(53,224,208,.08) 0%, rgba(53,224,208,0) 55%),
+      radial-gradient(1000px 700px at 90% 80%, rgba(139,123,255,.09) 0%, rgba(139,123,255,0) 55%),
+      linear-gradient(180deg,var(--bg1) 0%, var(--bg0) 60%, #04050b 100%);
+    background-attachment:fixed;
+  }
+  .wrap{max-width:1600px; margin:0 auto; padding:0 80px}
+  .serif{font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif}
+
+  /* ---------- top bar ---------- */
+  .topbar{position:sticky; top:0; z-index:30; backdrop-filter:blur(10px);
+    background:linear-gradient(180deg,rgba(5,6,14,.82),rgba(5,6,14,.3)); border-bottom:1px solid var(--panel-brd)}
+  .topbar .wrap{display:flex; align-items:center; gap:4px 18px; padding-top:16px; padding-bottom:16px; flex-wrap:wrap}
+  .brand{display:flex; align-items:center; gap:10px; font-weight:800; font-size:15px; letter-spacing:.01em}
+  .brand .dot{width:10px;height:10px;border-radius:50%;background:var(--magenta);box-shadow:0 0 12px var(--magenta)}
+  .toggle{display:inline-flex; background:rgba(255,255,255,.05); border:1px solid var(--panel-brd); border-radius:999px; padding:3px}
+  .toggle button{border:0; background:transparent; color:var(--muted); font-weight:700; font-size:12px; padding:6px 14px; border-radius:999px; cursor:pointer}
+  .toggle button.on{background:var(--grad); color:#0a0c1a}
+  .pill{padding:7px 14px; border-radius:999px; font-size:12px; font-weight:700; color:var(--purple);
+    background:rgba(139,123,255,.12); border:1px solid rgba(139,123,255,.35)}
+  .spacer{flex:1}
+  .prog{position:absolute; left:0; bottom:-1px; height:2px; width:0; background:var(--grad3); box-shadow:0 0 10px var(--purple)}
+  /* ---- live filter bar (Path A: client-side re-slice of feeder rows) — lives in Explore only ---- */
+  .fbar{flex-basis:100%; display:flex; align-items:center; gap:14px 26px; flex-wrap:wrap;
+    margin-top:0; padding-top:10px; border-top:1px solid var(--panel-brd)}
+  .fbar .grp{display:flex; align-items:center; gap:9px; flex-wrap:wrap}
+  .fbar .glab{color:var(--dim); font-size:10px; letter-spacing:.16em; font-weight:800}
+  .seg{display:inline-flex; background:rgba(255,255,255,.05); border:1px solid var(--panel-brd); border-radius:999px; padding:3px}
+  .seg button{border:0; background:transparent; color:var(--muted); font-weight:700; font-size:11px; padding:5px 12px; border-radius:999px; cursor:pointer}
+  .seg button.on{background:var(--grad); color:#0a0c1a}
+  /* multi-select dropdown (Region / Facility / Segment) */
+  .fdd{position:relative}
+  .fdd-btn{display:inline-flex; align-items:center; gap:9px; justify-content:space-between; min-width:96px;
+    border:1px solid var(--panel-brd); background:rgba(255,255,255,.04); color:var(--white);
+    font-size:11px; font-weight:700; padding:6px 12px; border-radius:999px; cursor:pointer; transition:.15s}
+  .fdd-btn:hover{border-color:var(--muted)}
+  .fdd-btn .car{color:var(--dim); font-size:9px; transform:translateY(1px)}
+  .fdd.open .fdd-btn{border-color:var(--muted)}
+  .fdd.open .fdd-btn .car{transform:translateY(1px) rotate(180deg)}
+  .fdd-panel{display:none; position:absolute; z-index:50; top:calc(100% + 6px); left:0;
+    min-width:210px; max-height:264px; overflow:auto; padding:6px;
+    background:#0b0e1c; border:1px solid var(--panel-brd); border-radius:12px; box-shadow:0 14px 36px rgba(0,0,0,.55)}
+  .fdd.open .fdd-panel{display:block}
+  .fopt{display:flex; align-items:center; gap:10px; padding:7px 9px; border-radius:8px; cursor:pointer;
+    font-size:12px; font-weight:600; color:var(--muted); white-space:nowrap}
+  .fopt:hover{background:rgba(255,255,255,.06); color:var(--white)}
+  .fopt.on{color:var(--white)}
+  .fopt .box{flex:0 0 auto; width:15px; height:15px; border-radius:5px; border:1.5px solid var(--muted);
+    display:inline-flex; align-items:center; justify-content:center; font-size:10px; font-weight:900; color:#0a0c1a}
+  .fopt.on .box{background:var(--grad); border-color:transparent}
+  .fbar.off{opacity:.35; pointer-events:none; filter:saturate(.4)}
+  /* ---- Explore button / view ---- */
+  .xbtn{display:inline-flex; align-items:center; gap:7px; border:1px solid rgba(242,95,208,.35);
+    background:rgba(242,95,208,.12); color:var(--white); font-size:12px; font-weight:800; letter-spacing:.02em;
+    padding:8px 15px; border-radius:999px; cursor:pointer; transition:.15s; white-space:nowrap}
+  .xbtn:hover{border-color:var(--magenta); background:rgba(242,95,208,.2)}
+  .xbtn .xar{color:var(--magenta); font-size:12px}
+  .xbtn.ghost{background:transparent; border-color:var(--panel-brd); color:var(--muted)}
+  .xbtn.ghost:hover{color:var(--white); border-color:var(--muted)}
+  .xbtn.save{border-color:rgba(53,224,208,.4); background:rgba(53,224,208,.12)}
+  .xbtn.save:hover{border-color:var(--teal); background:rgba(53,224,208,.2)}
+  #explore{display:none}
+  body.exploring .story{display:none}
+  body.exploring #explore{display:block}
+  body.exploring .dotnav{display:none}
+  body.exploring #btnExplore{display:none}
+  body.exploring #prog{display:none}
+  .ex-top{display:flex; align-items:center; gap:18px; padding:36px 0 6px}
+  .ex-title{font-size:26px; font-weight:800; letter-spacing:-.02em}
+  #explore .fbar{position:relative; margin-top:14px; padding:16px 0 0}
+  .ex-slice{color:var(--muted); font-size:12px; font-weight:700; letter-spacing:.02em}
+  .ex-slice b{color:var(--white)}
+  .ex-note{margin-top:12px; color:var(--amber); font-size:12px; font-weight:600; letter-spacing:.01em; display:none}
+  #explore.demo .ex-note{display:block}
+  .ex-win{color:var(--dim); font-weight:700; letter-spacing:.1em; margin-left:6px}
+  .ex-grid{display:grid; grid-template-columns:1fr 1fr; gap:22px; margin:26px 0 90px}
+  .ex-card{background:var(--panel); border:1px solid var(--panel-brd); border-radius:20px; padding:22px 26px}
+  .ex-card.wide{grid-column:1 / -1}
+  .ex-lab{color:var(--muted); font-size:11px; font-weight:800; letter-spacing:.18em; margin-bottom:14px}
+  #exTrend{width:100%; height:300px; display:block}
+  .ex-rail-row{margin:12px 0}
+  .ex-rail-row .rr-top{display:flex; justify-content:space-between; align-items:baseline; font-size:13px; margin-bottom:5px}
+  .ex-rail-row .rr-nm{color:#cdd4f5; font-weight:600}
+  .ex-rail-row .rr-val{font-weight:800}
+  .ex-rail-bar{height:9px; border-radius:999px; background:rgba(255,255,255,.06); overflow:hidden; position:relative}
+  .ex-rail-bar .rr-fill{height:100%; border-radius:999px; background:var(--grad); width:0; transition:width .8s cubic-bezier(.2,.7,.2,1)}
+  .ex-rail-bar .rr-mark{position:absolute; top:-3px; width:2px; height:15px; background:rgba(245,247,255,.7)}
+  .ex-empty{color:var(--dim); font-size:14px; padding:30px 0; text-align:center}
+  .toast{position:fixed; left:50%; top:40px; transform:translateX(-50%) translateY(-20px);
+    background:#0b0e1c; border:1px solid rgba(53,224,208,.5); color:var(--teal); font-weight:800; font-size:14px;
+    padding:13px 24px; border-radius:999px; box-shadow:0 14px 40px rgba(0,0,0,.6); opacity:0; pointer-events:none;
+    transition:.3s; z-index:60}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+
+  /* ---------- hero ---------- */
+  .hero{min-height:92vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:80px 0}
+  .hero .eyebrow{color:var(--magenta); font-size:13px; font-weight:800; letter-spacing:.34em; margin-bottom:30px}
+  .hero h1{font-size:82px; line-height:1.02; font-weight:800; letter-spacing:-.02em; max-width:1120px}
+  .hero h1 .hot{background:var(--grad3); -webkit-background-clip:text; background-clip:text; color:transparent}
+  .hero p{margin-top:34px; max-width:740px; color:var(--muted); font-size:19px; line-height:1.6}
+  .hero p b{color:var(--white); font-weight:600}
+  .prepared{margin-top:52px; display:flex; align-items:center; gap:14px; padding:14px 22px 14px 14px;
+    background:var(--panel); border:1px solid var(--panel-brd); border-radius:16px}
+  .prepared .av{width:44px;height:44px;border-radius:50%; background:var(--grad); display:grid; place-items:center; font-weight:800; color:#0a0c1a}
+  .prepared .who{text-align:left}
+  .prepared .who .k{font-size:10px; letter-spacing:.24em; color:var(--dim); font-weight:700}
+  .prepared .who .n{font-size:16px; font-weight:800}
+  .prepared .who .t{font-size:12px; color:var(--muted)}
+  .scrollcue{margin-top:60px; color:var(--dim); font-size:12px; letter-spacing:.24em; font-weight:700; animation:bob 2s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0);opacity:.6}50%{transform:translateY(6px);opacity:1}}
+
+  /* ---------- act scaffolding ---------- */
+  .chapter{padding:96px 0; border-top:1px solid rgba(140,150,200,.07)}
+  .chead{display:flex; align-items:flex-start; gap:26px; margin-bottom:44px}
+  .chead .kick{color:var(--magenta); font-size:12px; font-weight:800; letter-spacing:.24em}
+  .chead h2{font-size:40px; font-weight:800; letter-spacing:-.02em; margin-top:10px; line-height:1.08; max-width:940px}
+  .chead .subh{margin-top:12px; color:var(--dim); font-size:15px; font-weight:600; letter-spacing:.02em}
+  .cbody{display:grid; grid-template-columns:1fr 420px; gap:48px; align-items:start}
+  .cbody.wide{grid-template-columns:1fr}
+  .stage-card{position:relative; background:var(--panel); border:1px solid var(--panel-brd); border-radius:22px; padding:26px 30px; min-height:340px}
+  .stage-card .lab{color:var(--muted); font-size:11px; font-weight:700; letter-spacing:.18em; margin-bottom:6px}
+  .narr{color:#cdd4f5; font-size:16px; line-height:1.66}
+  .narr .lead{font-size:20px; color:var(--white); font-weight:700; line-height:1.4; margin-bottom:18px; letter-spacing:-.01em}
+  .narr b{color:var(--white); font-weight:700}
+  .annos{margin-top:26px; display:flex; flex-direction:column; gap:14px}
+  .anno{display:flex; gap:14px; align-items:flex-start; padding:14px 16px; border-radius:14px; background:rgba(255,255,255,.025); border:1px solid var(--panel-brd)}
+  .anno .idx{width:26px;height:26px;border-radius:8px; flex:none; display:grid; place-items:center; font-size:12px; font-weight:800; color:#0a0c1a; background:var(--grad)}
+  .anno .txt{font-size:13.5px; line-height:1.45}
+  .anno .txt .big{font-size:20px; font-weight:800; letter-spacing:-.02em; display:block}
+  .anno .txt .cap{color:var(--muted); font-size:12px}
+  .action{display:flex; gap:16px; align-items:center; padding:18px 20px; border-radius:16px; margin-bottom:12px;
+    background:linear-gradient(90deg,rgba(242,95,208,.10),rgba(255,255,255,.02)); border:1px solid rgba(242,95,208,.22)}
+  .action .n{width:34px;height:34px;border-radius:10px;flex:none;display:grid;place-items:center;font-weight:800;color:#0a0c1a;background:var(--grad)}
+  .action .t{font-size:15.5px; line-height:1.4}
+  .action .t b{font-weight:800}
+
+  /* kpi scorecard grid */
+  .kpis{display:grid; grid-template-columns:repeat(3,1fr); gap:16px}
+  .kpi{position:relative; padding:18px 20px 14px; border-radius:16px; background:rgba(255,255,255,.028); border:1px solid var(--panel-brd); overflow:hidden}
+  .kpi .lab{font-size:10px; letter-spacing:.16em; color:var(--muted); font-weight:700; padding-right:56px}
+  .kpi .val{font-size:36px; font-weight:800; letter-spacing:-.03em; margin-top:4px}
+  .kpi .val .u{font-size:17px; color:var(--muted); font-weight:700; margin-left:1px}
+  .kpi .val .pre{font-size:22px; color:var(--muted); font-weight:700; margin-right:1px}
+  .kpi .delta{position:absolute; top:18px; right:20px; font-size:12px; font-weight:800}
+  .kpi .spark{margin-top:6px; height:34px; width:100%; display:block}
+  .up{color:var(--teal)} .down{color:var(--red)} .watch{color:var(--amber)}
+
+  /* ---------- pinned diverging scrolly (Act I) ---------- */
+  .scrolly{display:grid; grid-template-columns:440px 1fr; gap:56px; align-items:start}
+  .scrolly .steps{display:flex; flex-direction:column}
+  .step{min-height:82vh; display:flex; flex-direction:column; justify-content:center;
+    opacity:.28; transform:translateY(10px); transition:opacity .5s ease, transform .5s ease}
+  .step.active{opacity:1; transform:none}
+  .step .kick{color:var(--magenta); font-size:11px; font-weight:800; letter-spacing:.22em}
+  .step h3{font-size:29px; font-weight:800; letter-spacing:-.02em; margin-top:12px; line-height:1.16}
+  .step p{margin-top:14px; color:#cdd4f5; font-size:16px; line-height:1.62; max-width:400px}
+  .step p b{color:var(--white)}
+  .step .stat{margin-top:20px; display:flex; align-items:baseline; gap:12px}
+  .step .stat .v{font-size:46px; font-weight:800; letter-spacing:-.03em}
+  .step .stat .d{font-size:14px; font-weight:800}
+  .sticky{position:sticky; top:11vh; height:78vh}
+  .sticky .card{height:100%; background:var(--panel); border:1px solid var(--panel-brd); border-radius:22px; padding:22px 26px; display:flex; flex-direction:column}
+  .sticky .lab{color:var(--muted); font-size:11px; font-weight:700; letter-spacing:.18em}
+  .legend{display:flex; gap:20px; margin-top:6px}
+  .legend .li{display:flex; align-items:center; gap:7px; font-size:12px; color:var(--muted); font-weight:700}
+  .legend .li .sw{width:14px; height:3px; border-radius:2px}
+  #diverge{flex:1; width:100%; display:block; margin-top:8px}
+
+  /* waterfall bridge */
+  #waterfall{width:100%; display:block; height:380px}
+  .bridge-legend{display:flex; gap:22px; margin-top:14px; flex-wrap:wrap}
+  .bridge-legend .li{display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); font-weight:700}
+  .bridge-legend .li .dot{width:11px;height:11px;border-radius:3px}
+
+  /* ranked scoreboard (facilities) */
+  .score{padding:16px 4px; border-bottom:1px solid rgba(140,150,200,.09); position:relative; transition:transform .25s ease; cursor:pointer}
+  .score:hover{transform:translateX(5px)}
+  .score .row1{display:flex; justify-content:space-between; align-items:baseline}
+  .score .nm{font-size:18px; font-weight:700}
+  .score .rt{display:flex; align-items:baseline; gap:10px}
+  .score .big{font-size:38px; font-weight:800; letter-spacing:-.03em; line-height:.9}
+  .score .big .pre{font-size:19px; color:var(--muted); font-weight:700}
+  .score .big .u{font-size:18px; color:var(--muted); font-weight:700}
+  .score .d{font-size:13px; font-weight:800}
+  .score .bar{position:relative; height:7px; border-radius:4px; background:rgba(140,150,200,.14); margin-top:12px}
+  .score .fill{position:absolute; left:0; top:0; height:100%; border-radius:4px; background:linear-gradient(90deg,var(--amber),var(--magenta)); width:0; transition:width 1.1s cubic-bezier(.2,.7,.2,1)}
+  .score .mark{position:absolute; top:-3px; width:2px; height:13px; background:var(--white); opacity:.5; border-radius:2px}
+  .score .cap{margin-top:9px; font-size:12px; color:var(--dim)}
+  .score .cap b{color:var(--muted); font-weight:700}
+  .score .go{position:absolute; right:0; top:20px; color:var(--dim); font-size:15px; opacity:0; transition:opacity .2s}
+  .score:hover .go{opacity:1; color:var(--magenta)}
+
+  .axis text{fill:var(--dim); font-size:11px}
+  .axis path,.axis line{stroke:rgba(140,150,200,.12)}
+
+  /* reveal on scroll */
+  .reveal{opacity:0; transform:translateY(34px); transition:opacity .8s cubic-bezier(.2,.7,.2,1), transform .8s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1; transform:none}
+  .reveal.d1{transition-delay:.08s} .reveal.d2{transition-delay:.16s} .reveal.d3{transition-delay:.24s}
+
+  /* filters, hints */
+  .filters{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:2px}
+  .chip{border:1px solid var(--panel-brd); background:rgba(255,255,255,.04); color:var(--muted);
+    font-size:12px; font-weight:700; letter-spacing:.02em; padding:7px 14px; border-radius:999px; cursor:pointer; transition:all .18s ease}
+  .chip:hover{color:var(--white); border-color:rgba(242,95,208,.5)}
+  .chip.on{background:var(--grad); color:#0a0c1a; border-color:transparent}
+  .readout{margin:12px 2px 8px; font-size:12.5px; color:var(--dim); font-weight:600}
+  .readout b{color:var(--muted); font-weight:800}
+  .hint{font-size:11px; color:var(--dim); letter-spacing:.03em; margin-top:12px}
+
+  /* KPI info badge + popover */
+  .kpi .info{position:absolute; left:14px; bottom:11px; width:18px;height:18px;border-radius:50%;
+    display:grid;place-items:center;font-size:11px;font-weight:800;cursor:pointer; font-style:italic;
+    color:var(--muted); border:1px solid var(--panel-brd); background:rgba(255,255,255,.05); z-index:2}
+  .kpi .info:hover{color:var(--white); border-color:var(--magenta)}
+  .popover{position:fixed; z-index:60; width:300px; padding:18px; border-radius:16px;
+    background:rgba(12,14,28,.97); border:1px solid rgba(242,95,208,.35); box-shadow:0 20px 60px rgba(0,0,0,.6);
+    backdrop-filter:blur(8px); opacity:0; transform:translateY(6px); pointer-events:none; transition:opacity .18s, transform .18s}
+  .popover.show{opacity:1; transform:none; pointer-events:auto}
+  .popover h4{font-size:12px; letter-spacing:.14em; color:var(--magenta); font-weight:800}
+  .popover .m{margin-top:8px; font-size:13px; color:#cdd4f5; line-height:1.55}
+  .popover .lbl{display:block; margin-top:13px; font-size:10px; letter-spacing:.16em; color:var(--dim); font-weight:800}
+
+  /* detail modal (facilities + segments) */
+  .modal-back{position:fixed; inset:0; z-index:80; background:rgba(4,5,11,.66); backdrop-filter:blur(6px);
+    display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity .22s}
+  .modal-back.show{opacity:1; pointer-events:auto}
+  /* Act III quadrant dots: hover affordance so it's clear they open a detail card on click */
+  .q-dot{cursor:pointer}
+  .q-dot circle{transform-box:fill-box; transform-origin:center; transition:transform .18s cubic-bezier(.2,.8,.3,1)}
+  .q-dot:hover circle{transform:scale(1.18)}
+  .q-dot:hover text{opacity:1 !important}
+  .modal{width:560px; max-width:92vw; background:linear-gradient(180deg,#0c0f20,#080a16);
+    border:1px solid rgba(242,95,208,.3); border-radius:22px; padding:30px 32px 28px; position:relative;
+    transform:translateY(18px) scale(.98); transition:transform .28s cubic-bezier(.2,.8,.3,1)}
+  .modal-back.show .modal{transform:none}
+  .modal .x{position:absolute; top:18px; right:20px; width:30px;height:30px;border-radius:50%; border:1px solid var(--panel-brd);
+    background:rgba(255,255,255,.04); color:var(--muted); cursor:pointer; font-size:13px; line-height:1}
+  .modal .x:hover{color:var(--white)}
+  .modal .region{font-size:11px; letter-spacing:.2em; font-weight:800; color:var(--magenta)}
+  .modal h3{font-size:26px; font-weight:800; margin-top:6px; letter-spacing:-.02em}
+  .modal .figs{display:flex; align-items:baseline; gap:14px; margin-top:16px}
+  .modal .figs .big{font-size:54px; font-weight:800; letter-spacing:-.03em; line-height:.9}
+  .modal .figs .pre{font-size:26px; color:var(--muted); font-weight:700}
+  .modal .figs .u{font-size:24px; color:var(--muted); font-weight:700}
+  .modal .figs .d{font-size:14px; font-weight:800}
+  .modal .status{display:inline-block; margin-top:14px; padding:5px 12px; border-radius:999px; font-size:11px; font-weight:800; letter-spacing:.08em}
+  .status.hot{background:rgba(242,95,208,.15); color:var(--magenta); border:1px solid rgba(242,95,208,.4)}
+  .status.watch{background:rgba(245,178,75,.14); color:var(--amber); border:1px solid rgba(245,178,75,.4)}
+  .status.ok{background:rgba(90,224,160,.14); color:var(--green); border:1px solid rgba(90,224,160,.4)}
+  .modal .mlab{margin-top:20px; font-size:10px; letter-spacing:.16em; color:var(--dim); font-weight:800}
+  .modal #mtrend{width:100%; height:110px; display:block; margin-top:8px}
+  .modal .pill-action{margin-top:20px; padding:14px 16px; border-radius:14px;
+    background:linear-gradient(90deg,rgba(242,95,208,.12),rgba(255,255,255,.02)); border:1px solid rgba(242,95,208,.28)}
+  .modal .pill-action .k{font-size:10px;letter-spacing:.16em;color:var(--magenta);font-weight:800}
+  .modal .pill-action .v{font-size:14px; margin-top:4px; line-height:1.45}
+
+  /* quadrant scatter */
+  #quadrant{width:100%; display:block}
+  .q-dot{cursor:pointer; transition:opacity .2s}
+  .q-dot:hover{opacity:1}
+
+  /* run-rate */
+  .runrate{text-align:center; padding:10px 0 6px}
+  .rr-big{font-size:104px; font-weight:800; letter-spacing:-.04em; line-height:1;
+    background:var(--grad3); -webkit-background-clip:text; background-clip:text; color:transparent}
+  .rr-big .pre,.rr-big .u{-webkit-text-fill-color:var(--muted); color:var(--muted); font-size:44px}
+  .rr-sub{margin-top:14px; color:var(--muted); font-size:16px; letter-spacing:.02em}
+  #unbilledTrend{width:100%; display:block; height:220px; margin-top:8px}
+
+  /* trend crosshair tooltip */
+  #ttip{position:fixed; z-index:50; pointer-events:none; opacity:0; transition:opacity .12s;
+    background:rgba(12,14,28,.96); border:1px solid rgba(242,95,208,.4); border-radius:10px; padding:8px 12px;
+    box-shadow:0 10px 30px rgba(0,0,0,.5)}
+  #ttip .dd{color:var(--dim); font-size:10px; letter-spacing:.1em; font-weight:700}
+  #ttip .vv{font-size:18px; font-weight:800; color:var(--magenta)}
+
+  /* sticky dot-nav */
+  .dotnav{position:fixed; right:26px; top:50%; transform:translateY(-50%); z-index:40; display:flex; flex-direction:column; gap:15px}
+  .dotnav a{position:relative; width:11px; height:11px; border-radius:50%; border:1.5px solid rgba(154,166,214,.4);
+    background:transparent; transition:transform .25s, box-shadow .25s, background .25s, border-color .25s; cursor:pointer}
+  .dotnav a:hover{border-color:var(--magenta)}
+  .dotnav a.on{background:var(--grad); border-color:transparent; box-shadow:0 0 12px rgba(242,95,208,.75); transform:scale(1.35)}
+  .dotnav a .tip{position:absolute; right:24px; top:50%; transform:translateY(-50%); white-space:nowrap;
+    font-size:11px; font-weight:700; letter-spacing:.04em; color:var(--muted); background:rgba(12,14,28,.96);
+    border:1px solid var(--panel-brd); padding:5px 11px; border-radius:8px; opacity:0; pointer-events:none; transition:opacity .2s}
+  .dotnav a:hover .tip{opacity:1}
+  @media (max-width:1100px){ .dotnav{display:none} .scrolly{grid-template-columns:1fr} .sticky{position:relative; height:64vh; top:0} }
+
+  /* expandable narrative */
+  .more{max-height:0; overflow:hidden; opacity:0; transition:max-height .55s cubic-bezier(.2,.7,.2,1), opacity .4s ease}
+  .more.open{max-height:620px; opacity:1; margin-top:16px}
+  .more .lead2{font-size:16px; color:var(--white); font-weight:700; margin-bottom:8px; letter-spacing:-.01em}
+  .readmore{margin-top:18px; display:inline-flex; align-items:center; gap:7px; cursor:pointer;
+    background:rgba(242,95,208,.08); border:1px solid rgba(242,95,208,.28); color:var(--magenta);
+    font-weight:800; font-size:12px; letter-spacing:.06em; padding:8px 15px; border-radius:999px; transition:all .2s}
+  .readmore:hover{background:rgba(242,95,208,.16); color:var(--white)}
+  .readmore .ar{transition:transform .32s cubic-bezier(.2,.7,.2,1)}
+  .readmore.open .ar{transform:rotate(180deg)}
+
+  /* closing */
+  .closing{padding:120px 0 140px; text-align:center}
+  .closing .eyebrow{color:var(--magenta); font-size:12px; font-weight:800; letter-spacing:.3em}
+  .closing h2{font-size:46px; font-weight:800; letter-spacing:-.02em; margin-top:20px; max-width:920px; margin-inline:auto; line-height:1.1}
+  .closing .three{display:grid; grid-template-columns:repeat(3,1fr); gap:22px; margin-top:56px; text-align:left}
+  .closing .three .c{padding:26px; border-radius:18px; background:var(--panel); border:1px solid var(--panel-brd)}
+  .closing .three .c .n{font-size:13px; font-weight:800; color:var(--magenta)}
+  .closing .three .c h3{font-size:18px; font-weight:800; margin-top:10px; line-height:1.3}
+  .closing .three .c p{font-size:14px; color:var(--muted); line-height:1.6; margin-top:10px}
+  .backtop{margin-top:64px; color:var(--dim); font-size:13px; letter-spacing:.16em; font-weight:700; text-decoration:none; display:inline-block}
+</style>
+</head>
+<body id="top">
+
+<div class="topbar">
+  <div class="wrap">
+    <div class="brand"><span class="dot"></span> The Quiet Erosion · CFO Brief · FQ3</div>
+    <div class="toggle"><button data-mode="demo">Demo</button><button class="on" data-mode="live">Live</button></div>
+    <span class="pill">Trusted · Tableau Pulse</span>
+    <div class="spacer"></div>
+    <button class="xbtn" id="btnExplore" type="button">Explore data <span class="xar">↗</span></button>
+    <span style="color:var(--dim); font-size:12px; letter-spacing:.14em" id="asof">PREVIOUS 90 DAYS</span>
+    <div class="prog" id="prog"></div>
+  </div>
+</div>
+
+<div class="wrap story">
+
+  <!-- HERO -->
+  <section class="hero" id="topsec">
+    <div class="eyebrow reveal">SCROLL TO EXPLORE</div>
+    <h1 class="serif reveal d1">The Quiet <span class="hot">Erosion</span>.<br/>Revenue is up. Margin is leaking.</h1>
+    <p class="reveal d2">Revenue per load has never looked healthier — which is exactly why <b><span data-v="drop">four</span> points of gross margin</b> slipped away without setting off an alarm. This brief follows the money down to where it's leaking, live from the Pulse datasource.</p>
+    <div class="prepared reveal d3">
+      <div class="av">MV</div>
+      <div class="who"><div class="k">PREPARED FOR</div><div class="n">Morgan &ldquo;Margins&rdquo; Vale</div><div class="t">Chief Financial Officer</div></div>
+    </div>
+    <div class="scrollcue reveal d3">↓ SCROLL</div>
+  </section>
+
+  <!-- ACT I — PINNED DIVERGING SCROLLY -->
+  <section class="chapter" data-ch id="act1">
+    <div class="chead reveal">
+      <div>
+        <div class="kick">ACT I · THE SIGNAL</div>
+        <h2>Two lines that used to move together — and no longer do.</h2>
+        <div class="subh">revenue per load vs. gross margin · 7-day average · previous 90 days</div>
+      </div>
+    </div>
+    <div class="scrolly">
+      <div class="steps">
+        <div class="step" data-step="0">
+          <div class="kick">THE TOP LINE</div>
+          <h3>The number the board watches is fine.</h3>
+          <p>Revenue per load is holding — even drifting up. On the headline metric, the network looks like it's winning.</p>
+          <div class="stat"><span class="v" style="color:var(--white)">$<span data-v="rpl">282</span></span><span class="d up">90-day avg · running at $<span data-v="rplNow">287</span> today</span></div>
+          <div class="scrollcue" style="margin-top:28px; letter-spacing:.1em">↓ KEEP SCROLLING — A SECOND LINE IS HIDING HERE</div>
+        </div>
+        <div class="step" data-step="1">
+          <div class="kick">THE OTHER LINE</div>
+          <h3>Underneath it, margin has been sliding since late July.</h3>
+          <p>Gross margin left the flat band it held all spring and started falling — quietly, while revenue kept climbing.</p>
+          <div class="stat"><span class="v" style="color:var(--magenta)"><span data-v="margin">16.8</span>%</span><span class="d down">90-day avg · exit rate now <span data-v="marginNow">13.3</span>%</span></div>
+          <div class="scrollcue" style="margin-top:28px">↓ KEEP SCROLLING</div>
+        </div>
+        <div class="step" data-step="2">
+          <div class="kick">THE GAP</div>
+          <h3><span data-v="drop">Four</span> points of margin, gone — with the top line never blinking.</h3>
+          <p>That's the shaded wedge: the distance between the margin we used to earn and the margin we earn now. <b>−<span data-v="drop">4.0</span> points in 90 days.</b></p>
+          <div class="scrollcue" style="margin-top:28px">↓ KEEP SCROLLING</div>
+        </div>
+        <div class="step" data-step="3">
+          <div class="kick">WHY IT STAYED QUIET</div>
+          <h3>A healthy top line was the camouflage.</h3>
+          <p>Rising revenue per load hid falling margin in plain sight. The rest of this brief answers the only question that matters: <b>where did the <span data-v="drop">four</span> points go?</b></p>
+          <div class="scrollcue" style="margin-top:28px">↓ KEEP SCROLLING</div>
+        </div>
+      </div>
+      <div class="sticky">
+        <div class="card">
+          <div class="lab">REVENUE PER LOAD vs. GROSS MARGIN · 7-DAY AVG</div>
+          <div class="legend">
+            <div class="li"><span class="sw" style="background:var(--white)"></span> Revenue / load (right)</div>
+            <div class="li"><span class="sw" style="background:var(--magenta)"></span> Gross margin (left)</div>
+          </div>
+          <svg id="diverge"></svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ACT II — THE MARGIN BRIDGE (waterfall) -->
+  <section class="chapter" data-ch id="act2">
+    <div class="chead reveal">
+      <div>
+        <div class="kick">ACT II · THE BRIDGE</div>
+        <h2>Where the <span data-v="drop">four</span> points went.</h2>
+        <div class="subh">gross margin walk · previous 30 days vs. last 30 days · in points</div>
+      </div>
+    </div>
+    <div class="cbody wide">
+      <div class="stage-card reveal d1">
+        <div class="lab">MARGIN BRIDGE · <span data-v="mStart">17.8</span>% → <span data-v="mEnd">13.8</span>%</div>
+        <svg id="waterfall"></svg>
+        <div class="bridge-legend">
+          <div class="li"><span class="dot" style="background:var(--green)"></span> Starting margin</div>
+          <div class="li"><span class="dot" style="background:var(--amber)"></span> Cost creep</div>
+          <div class="li"><span class="dot" style="background:var(--magenta)"></span> Unbilled / rate leak</div>
+          <div class="li"><span class="dot" style="background:var(--red)"></span> Where we landed</div>
+        </div>
+        <div class="narr" style="margin-top:22px">
+          <div class="lead">Nearly half the erosion is revenue we earned but never billed.</div>
+          The single biggest bite — <b><span data-v="bUnb">1.8</span> points</b> — isn't a cost at all. It's accessorial, detention, and rate work performed and never invoiced: margin we already produced and gave away. Labor cost creep takes another <b><span data-v="bLabor">1.6</span></b>, and cost-to-serve <b><span data-v="bCts">0.6</span></b>.
+          <div class="more" id="more2">
+            <div class="lead2">Two of these three are recoverable without touching operations.</div>
+            Unbilled revenue and under-applied rates are billing problems, not capacity problems — they're recovered with an audit and a repricing conversation, not a new building. Only the labor slice traces back to the same congestion the operations brief flagged. That's the good news hiding in the bridge: <b>the largest leak is also the cheapest to close.</b>
+          </div>
+          <button class="readmore" data-more="more2">Read more <span class="ar">↓</span></button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ACT III — THE LEAK HAS AN ADDRESS (quadrant) -->
+  <section class="chapter" data-ch id="act3">
+    <div class="chead reveal">
+      <div>
+        <div class="kick">ACT III · THE ADDRESS</div>
+        <h2>The leak isn't everywhere — it has an address.</h2>
+        <div class="subh">by client segment · unbilled revenue vs. gross margin · bubble = revenue per load</div>
+      </div>
+    </div>
+    <div class="cbody wide">
+      <div class="stage-card reveal d1">
+        <div class="filters" id="segChips"></div>
+        <div class="readout" id="segReadout"></div>
+        <svg id="quadrant" style="height:440px"></svg>
+        <div class="hint">↳ Bottom-right is the danger quadrant: high unbilled revenue, low margin. Click any segment for detail and a recommended move.</div>
+      </div>
+      <div class="narr reveal d2" style="grid-column:1 / -1; max-width:960px; margin-top:6px">
+        <div class="lead">Two segments sit deepest in the danger quadrant.</div>
+        <b><span data-v="seg0name">Outdoor Equipment &amp; Powersports</span></b> and <b><span data-v="seg1name">Automotive</span></b> carry the most unbilled revenue and the thinnest margins in the book — together roughly $<span data-v="seg2sum">580</span>K of work performed and not invoiced. Meanwhile <b><span data-v="anchorSeg">DTC / Retail</span></b> sits exactly where you want a client: the highest margin and the lowest leakage in the book.
+      </div>
+    </div>
+  </section>
+
+  <!-- ACT IV — THE SAME TWO BUILDINGS (facilities) -->
+  <section class="chapter" data-ch id="act4">
+    <div class="chead reveal">
+      <div>
+        <div class="kick">ACT IV · THE OVERLAP</div>
+        <h2>The finance leak shares an address with the operations strain.</h2>
+        <div class="subh">unbilled revenue by facility · previous 90 days · white tick = prior period</div>
+      </div>
+    </div>
+    <div class="cbody">
+      <div class="stage-card reveal d1">
+        <div class="filters" id="regionChips"></div>
+        <div class="readout" id="railReadout"></div>
+        <div id="rail"></div>
+        <div class="hint">↳ Click any facility for its margin, profitability, and recommended action.</div>
+      </div>
+      <div class="narr reveal d2">
+        <div class="lead"><span data-v="fac0name">Crossdock North</span> and <span data-v="fac1name">DC Prime</span> — both <span data-v="topRegion">Midwest</span> — lead the network in unbilled revenue.</div>
+        These are the same two buildings the operations brief flagged as running hottest. Seen through the P&amp;L, running hot doesn't just slow put-away — it produces work that outruns the billing system. The congestion and the leak are one problem wearing two faces.
+        <div class="annos">
+          <div class="anno"><div class="idx">1</div><div class="txt"><span class="big">$<span data-v="fac0unb">267</span>K</span><span class="cap"><span data-v="fac0label">Crossdock North — Midwest</span> · <span data-v="fac0margin">15.9</span>% margin · profitability <span data-v="fac0prof">94</span></span></div></div>
+          <div class="anno"><div class="idx">2</div><div class="txt"><span class="big">$<span data-v="fac1unb">262</span>K</span><span class="cap"><span data-v="fac1label">DC Prime — Midwest</span> · <span data-v="fac1margin">15.8</span>% margin · profitability <span data-v="fac1prof">94</span></span></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ACT V — THE COST OF WAITING (run-rate) -->
+  <section class="chapter" data-ch id="act5">
+    <div class="chead reveal">
+      <div>
+        <div class="kick">ACT V · THE COST OF WAITING</div>
+        <h2>Left alone, the leak is a $<span data-v="runrate">8.0</span>M-a-year habit.</h2>
+        <div class="subh">unbilled revenue · monthly run-rate · previous 90 days</div>
+      </div>
+    </div>
+    <div class="cbody wide">
+      <div class="stage-card reveal d1">
+        <div class="runrate">
+          <div class="rr-big"><span class="pre">$</span><span id="rrv">0</span><span class="u">M</span></div>
+          <div class="rr-sub">annualized unbilled revenue, if the current pace holds</div>
+        </div>
+        <div class="lab" style="margin-top:26px">UNBILLED REVENUE · PER MONTH · 7-DAY AVG PACE</div>
+        <svg id="unbilledTrend"></svg>
+        <div class="narr" style="margin-top:22px">
+          <div class="lead">Monthly unbilled revenue climbed <span data-v="unbPct">75</span>% in a single quarter — $<span data-v="unbStart">383</span>K to $<span data-v="unbEnd">670</span>K.</div>
+          This is the compounding cost of the quiet part: every month the audit waits, roughly two-thirds of a million dollars of already-completed work ages further out of easy recovery.
+          <div class="more" id="more5">
+            <div class="lead2">Recoverable is not the same as recovered.</div>
+            Unbilled revenue has a shelf life — the older it gets, the harder the client conversation and the lower the collection rate. The run-rate isn't a projection of new losses; it's the price of the delay itself. Closing the billing gap now converts a leak back into margin the network already earned.
+          </div>
+          <button class="readmore" data-more="more5">Read more <span class="ar">↓</span></button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ACTIONS -->
+  <section class="chapter" data-ch id="act6">
+    <div class="chead reveal">
+      <div>
+        <div class="kick">RECOMMENDED ACTIONS</div>
+        <h2>Recover the billing, reprice the leak, protect the anchor.</h2>
+        <div class="subh">3 finance moves for the quarter ahead</div>
+      </div>
+    </div>
+    <div class="cbody wide">
+      <div class="reveal d1">
+        <div class="action"><div class="n">1</div><div class="t"><b>Launch an unbilled-revenue audit at Crossdock North &amp; DC Prime.</b> Start where the leak is largest — accessorial, detention, and rate true-ups. Recovering even half the $<span data-v="unbBook">1.4</span>M book is 1+ point of margin back, with no operational change.</div></div>
+        <div class="action"><div class="n">2</div><div class="t"><b>Reprice <span data-v="seg0name">Outdoor / Powersports</span> and <span data-v="seg1name">Automotive</span> contracts.</b> Both sit in the danger quadrant on thin margins and heavy unbilled work. Move to activity-based accessorial billing at renewal so the work that's being done is the work that's invoiced.</div></div>
+        <div class="action"><div class="n">3</div><div class="t"><b>Protect <span data-v="anchorSeg">DTC / Retail</span> as the margin anchor.</b> It's the counter-trend proving the model still works — the highest margin and the lowest leakage in the book. Ring-fence its service levels while the recovery runs.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CLOSING -->
+  <section class="closing" data-ch id="close">
+    <div class="eyebrow reveal">WHAT THIS BRIEF MADE POSSIBLE</div>
+    <h2 class="serif reveal d1"><span data-v="drop">Four</span> points of margin, found before the year closed on them.</h2>
+    <div class="three">
+      <div class="c reveal d1"><div class="n">1</div><h3>Erosion, made visible</h3><p>A rising top line hid a falling margin. Reading revenue per load against gross margin turned an invisible drift into a number with a size: −<span data-v="drop">4.0</span> points.</p></div>
+      <div class="c reveal d2"><div class="n">2</div><h3>The leak, addressed</h3><p>Nearly half the loss is unbilled revenue concentrated in two segments and two buildings — a billing fix, not a capacity one, and the cheapest point to win back.</p></div>
+      <div class="c reveal d3"><div class="n">3</div><h3>The same event, two lenses</h3><p>Operations saw a capacity crunch; finance saw a margin leak. Same two <span data-v="topRegion">Midwest</span> buildings. One problem, now seen whole.</p></div>
+    </div>
+    <a class="backtop reveal" href="#top">BACK TO TOP ↑</a>
+  </section>
+
+</div>
+
+<!-- ===================== EXPLORE VIEW (filters live here; story stays unfiltered) ===================== -->
+<div id="explore">
+  <div class="wrap">
+    <div class="ex-top">
+      <button class="xbtn ghost" id="btnBackStory" type="button"><span class="xar">←</span> Back to story</button>
+      <div class="ex-title">Explore the finance book</div>
+      <div class="spacer"></div>
+      <button class="xbtn save" id="btnSave" type="button">Save view</button>
+    </div>
+
+    <div class="fbar" id="fbar">
+      <div class="grp"><span class="glab">WINDOW</span>
+        <div class="seg" id="fWindow">
+          <button data-days="30">30d</button><button data-days="60">60d</button><button class="on" data-days="90">90d</button><button data-days="180">180d</button>
+        </div>
+      </div>
+      <div class="grp"><span class="glab">REGION</span>
+        <div class="fdd" id="ddRegions"><button class="fdd-btn" type="button">All <span class="car">▾</span></button><div class="fdd-panel"></div></div>
+      </div>
+      <div class="grp"><span class="glab">FACILITY</span>
+        <div class="fdd" id="ddFacilities"><button class="fdd-btn" type="button">All <span class="car">▾</span></button><div class="fdd-panel"></div></div>
+      </div>
+      <div class="grp"><span class="glab">CLIENT SEGMENT</span>
+        <div class="fdd" id="ddSegments"><button class="fdd-btn" type="button">All <span class="car">▾</span></button><div class="fdd-panel"></div></div>
+      </div>
+      <div class="spacer"></div>
+      <span class="ex-slice" id="exSlice"></span>
+    </div>
+    <div class="ex-note" id="exNote">Filters act on live feeder data. Switch the top toggle to <b>Live</b> to slice.</div>
+
+    <div class="ex-grid">
+      <div class="ex-card wide">
+        <div class="ex-lab">FINANCE SIGNALS · SELECTED SLICE</div>
+        <div class="kpis" id="exKpis"></div>
+      </div>
+      <div class="ex-card">
+        <div class="ex-lab">GROSS MARGIN · 7-DAY AVG <span class="ex-win" id="exWinLab"></span></div>
+        <svg id="exTrend" viewBox="0 0 1000 300" preserveAspectRatio="none"></svg>
+      </div>
+      <div class="ex-card">
+        <div class="ex-lab">UNBILLED REVENUE BY FACILITY</div>
+        <div id="exRail"></div>
+      </div>
+    </div>
+  </div>
+  <div class="toast" id="toast">View saved ✓</div>
+</div>
+
+<!-- detail modal (facilities + segments) -->
+<div class="modal-back" id="facModal">
+  <div class="modal">
+    <button class="x" id="facClose">✕</button>
+    <div class="region" id="mRegion"></div>
+    <h3 id="mName"></h3>
+    <div class="figs"><div class="big"><span class="pre" id="mPre"></span><span id="mVal">0</span><span class="u" id="mUnit"></span></div><div class="d" id="mDelta"></div></div>
+    <div><span class="status" id="mStatus"></span></div>
+    <div class="mlab" id="mLab"></div>
+    <svg id="mtrend" viewBox="0 0 496 110" preserveAspectRatio="none"></svg>
+    <div class="pill-action"><div class="k">RECOMMENDED ACTION</div><div class="v" id="mAction"></div></div>
+  </div>
+</div>
+
+<!-- KPI info popover -->
+<div class="popover" id="pop">
+  <h4 id="popTitle"></h4>
+  <div class="m" id="popMeasures"></div>
+  <span class="lbl">WHY IT MATTERS</span>
+  <div class="m" id="popWhy"></div>
+</div>
+
+<!-- trend crosshair tooltip -->
+<div id="ttip"><div class="dd" id="ttD"></div><div class="vv" id="ttV"></div></div>
+
+<script>
+// __LIVE_INJECT__ — build_standalone.py --persona cfo injects `window.__LIVE__ = {...}`
+// immediately above this line (raw feeder rows; see cfo_values.py). Absent in seed/dev builds.
+// ========================================================================
+//  SEED — frozen demo data (grounded in the live VDS pull, previous 90 days)
+//  Same contract shape as coo-brief.html; CFO measures + segments + bridge.
+// ========================================================================
+const _lcg=(s)=>()=>{ s=(s*9301+49297)%233280; return s/233280; };
+const SEED = {
+  asof: "Sep 11, 2026",
+  // headline KPIs (90-day value; delta = recent 30 vs prior 30)
+  kpis:[
+    {key:"rpl",     lab:"REVENUE PER LOAD",   value:282,   pre:"$", unit:"",  fmt:0, dir:"up",   delta:"+$6",   good:true,  color:"var(--white)",   slope:1},
+    {key:"margin",  lab:"GROSS MARGIN",       value:16.9,  pre:"",  unit:"%", fmt:1, dir:"down", delta:"−4.0",  good:false, color:"var(--magenta)", slope:-1},
+    {key:"labor",   lab:"LABOR COST",         value:29.2,  pre:"",  unit:"%", fmt:1, dir:"up",   delta:"+3.1",  good:false, color:"var(--amber)",   slope:1},
+    {key:"cts",     lab:"COST TO SERVE",      value:31.24, pre:"$", unit:"",  fmt:2, dir:"up",   delta:"+2.21", good:false, color:"var(--amber)",   slope:1},
+    {key:"prof",    lab:"PROFITABILITY INDEX",value:96.0,  pre:"",  unit:"",  fmt:1, dir:"down", delta:"−7.4",  good:false, color:"var(--amber)",   slope:-1},
+    {key:"unbilled",lab:"UNBILLED REVENUE",   value:1.36,  pre:"$", unit:"M", fmt:2, dir:"up",   delta:"+75%",  good:false, color:"var(--magenta)", slope:1},
+  ],
+  // margin bridge: prior 30 → recent 30, in points
+  bridge:[
+    {label:"Prior margin",   type:"start", value:17.8},
+    {label:"Labor cost",     type:"down",  value:-1.6},
+    {label:"UNBILLED",       type:"down",  value:-1.8},
+    {label:"Cost-to-serve",  type:"down",  value:-0.6},
+    {label:"Current margin", type:"end",   value:13.8},
+  ],
+  // client segments: unbilled ($K SUM), margin (%), prior margin, revenue/load ($)
+  segments:[
+    {name:"Outdoor Equip. & Powersports", unbilled:297, margin:14.9, prevMargin:16.3, rpl:268},
+    {name:"Automotive",                   unbilled:283, margin:15.3, prevMargin:16.9, rpl:301},
+    {name:"Heavy Industrials",            unbilled:233, margin:16.5, prevMargin:17.6, rpl:352},
+    {name:"Paper & Packaging",            unbilled:223, margin:16.7, prevMargin:17.4, rpl:243},
+    {name:"Aerospace & Defense",          unbilled:175, margin:18.4, prevMargin:18.9, rpl:426},
+    {name:"DTC / Retail",                 unbilled:145, margin:19.3, prevMargin:19.2, rpl:184},
+  ],
+  // facilities: unbilled ($K SUM), margin (%), prior unbilled, profitability
+  facilities:[
+    {name:"Crossdock North — Midwest", unbilled:267, prev:214, margin:15.9, prof:94.1, region:"Midwest"},
+    {name:"DC Prime — Midwest",        unbilled:262, prev:212, margin:15.8, prof:94.0, region:"Midwest"},
+    {name:"DC South — Southeast",      unbilled:212, prev:186, margin:17.3, prof:97.6, region:"Southeast"},
+    {name:"DC Gulf — South Central",   unbilled:210, prev:185, margin:17.2, prof:97.4, region:"South Central"},
+    {name:"DC West — Mountain",        unbilled:205, prev:182, margin:17.4, prof:97.8, region:"Mountain"},
+    {name:"DC Pacific — West Coast",   unbilled:200, prev:180, margin:17.5, prof:98.1, region:"West Coast"},
+  ],
+  runrate: 8.0,   // annualized unbilled run-rate, $M
+  unbilledMonthly:{start:383, end:670},  // $K/month, prior → recent
+  // diverging lines: revenue/load (flat, up) vs gross margin (falls from ~19 to ~13.4)
+  diverge: (()=>{ const N=90, dates=[], rpl=[], margin=[], rnd=_lcg(4470), today=new Date();
+    for(let i=N-1;i>=0;i--){ const d=new Date(today); d.setDate(today.getDate()-i); dates.push(d.toISOString().slice(0,10)); }
+    for(let t=0;t<N;t++){
+      let r = 280 + Math.sin(t*0.4)*3 + t*0.06 + (rnd()-0.5)*1.4;      // ~277–289, gently up
+      rpl.push(+r.toFixed(2));
+      let mg = t<42 ? 19 + Math.sin(t*0.5)*0.22 : 19 - (t-42)*(5.6/47); // flat then decline to ~13.4
+      mg += (rnd()-0.5)*0.18;
+      margin.push(+mg.toFixed(2));
+    }
+    return {dates, rpl, margin}; })(),
+  // unbilled monthly run-rate pace: $383K → $670K climb, 7-day-avg feel
+  unbilledPace: (()=>{ const N=90, dates=[], val=[], rnd=_lcg(6118), today=new Date();
+    for(let i=N-1;i>=0;i--){ const d=new Date(today); d.setDate(today.getDate()-i); dates.push(d.toISOString().slice(0,10));
+      const t=(N-1-i); let v = 383 + (t/(N-1))*(670-383) + (rnd()-0.5)*22; val.push(+v.toFixed(1)); }
+    return dates.map((d,i)=>({date:d, value:val[i]})); })(),
+};
+// per-KPI sparkline (direction reflects each metric's own recent trajectory)
+SEED.kpis.forEach(k=>{ const rnd=_lcg(k.key.length*131+7); k.spark = d3.range(12).map(i=>{
+  const drift = k.slope>=0 ? (0.92+0.014*i) : (1.08-0.014*i);
+  return k.value*drift + (rnd()-0.5)*k.value*0.02; }); });
+
+const F = { 0:(v)=>Math.round(v).toLocaleString(), 1:(v)=>v.toFixed(1), 2:(v)=>v.toFixed(2), 3:(v)=>v.toFixed(3) };
+
+const KPI_META = {
+  rpl:     {measures:"Average revenue billed per load moved, across the network.", why:"The top-line health signal. It's rising — which is exactly why the margin erosion underneath it went unnoticed for a quarter."},
+  margin:  {measures:"Gross profit as a share of revenue, after direct cost of service.", why:"The core signal of this brief. Down 4.0 points in 90 days while revenue held — margin the network earned and then lost."},
+  labor:   {measures:"Direct labor as a share of revenue.", why:"When buildings run hot, every load takes more people. Rising labor cost is one of the three bites out of margin — and the one tied to capacity."},
+  cts:     {measures:"Fully-loaded cost to serve one load, in dollars.", why:"The efficiency of moving a load. Climbing cost-to-serve is the smallest slice of the erosion, but it's the one that compounds with volume."},
+  prof:    {measures:"Blended client profitability index (100 = plan). Weighted by revenue.", why:"How far clients sit from their contracted economics. Below 100 means the book is collectively under-earning against the deals we signed."},
+  unbilled:{measures:"Revenue for work performed — accessorial, detention, rate true-ups — not yet invoiced.", why:"The largest single leak, and the most recoverable: it's margin already produced, waiting on billing rather than operations."},
+};
+
+// ---------- shared defs + count-up ----------
+// Every chart svg used to call this and create its OWN local <defs> with
+// id="gg"/id="glow" — since url(#id) references resolve against the whole
+// document's id table (not scoped to the local <svg>), having many duplicate
+// ids on the page at once caused intermittent blank strokes/fills whenever
+// any one chart's redraw cycle (selectAll("*").remove() + re-append) briefly
+// left url(#gg)/url(#glow) pointing at a mid-teardown node. Fixed by creating
+// ONE persistent global defs block (injectGlobalDefs, called once from boot)
+// that every chart references — this is now a no-op kept only so existing
+// call sites don't need to change.
+function ensureDefs(svg){}
+function injectGlobalDefs(){
+  if(document.getElementById("globalChartDefs")) return;
+  const svg=d3.select("body").append("svg").attr("id","globalChartDefs")
+    .style("position","absolute").style("width","0").style("height","0").style("overflow","hidden");
+  const defs=svg.append("defs");
+  const g=defs.append("linearGradient").attr("id","gg").attr("x1","0").attr("x2","1");
+  g.append("stop").attr("offset","0%").attr("stop-color","#35E0D0");
+  g.append("stop").attr("offset","55%").attr("stop-color","#8B7BFF");
+  g.append("stop").attr("offset","100%").attr("stop-color","#F25FD0");
+  const glow=defs.append("filter").attr("id","glow").attr("x","-60%").attr("y","-60%").attr("width","220%").attr("height","220%");
+  glow.append("feGaussianBlur").attr("stdDeviation","5").attr("result","b");
+  const fm=glow.append("feMerge"); fm.append("feMergeNode").attr("in","b"); fm.append("feMergeNode").attr("in","SourceGraphic");
+}
+function countUp(node, to, fmt, dur){
+  const iv=d3.interpolate(0,to), st=performance.now();
+  (function run(t){const pr=Math.min(1,(t-st)/(dur||1300));node.text(fmt(iv(d3.easeCubicOut(pr))));if(pr<1)requestAnimationFrame(run);else node.text(fmt(to));})(st);
+}
+
+// ---------- KPI scorecard ----------
+function drawKpis(hostSel, kpis){
+  const host=d3.select(hostSel).html("");
+  kpis.forEach((k,idx)=>{
+    const c=host.append("div").attr("class","kpi");
+    c.append("div").attr("class","lab").text(k.lab);
+    const val=c.append("div").attr("class","val").style("color",k.color);
+    if(k.pre) val.append("span").attr("class","pre").text(k.pre);
+    const num=val.append("span").text("0"); val.append("span").attr("class","u").text(k.unit);
+    c.append("div").attr("class","delta "+(k.good?"up":"watch")).text((k.dir==="up"?"▲ ":"▼ ")+k.delta);
+    const sw=260, sh=34; const svg=c.append("svg").attr("class","spark").attr("viewBox",`0 0 ${sw} ${sh}`).attr("preserveAspectRatio","none"); ensureDefs(svg);
+    const x=d3.scaleLinear().domain([0,k.spark.length-1]).range([2,sw-2]);
+    const y=d3.scaleLinear().domain([d3.min(k.spark)*.98,d3.max(k.spark)*1.02]).range([sh-3,3]);
+    const line=d3.line().x((d,i)=>x(i)).y(d=>y(d)).curve(d3.curveMonotoneX);
+    const area=d3.area().x((d,i)=>x(i)).y0(sh).y1(d=>y(d)).curve(d3.curveMonotoneX);
+    const col=k.good?"#35E0D0":"#F5B24B";
+    svg.append("path").attr("d",area(k.spark)).attr("fill",col).attr("opacity",.12);
+    const p=svg.append("path").attr("d",line(k.spark)).attr("fill","none").attr("stroke",col).attr("stroke-width",2.2).attr("filter","url(#glow)");
+    const L=p.node().getTotalLength(); p.attr("stroke-dasharray",L).attr("stroke-dashoffset",L).transition().delay(400+idx*60).duration(950).attr("stroke-dashoffset",0);
+    countUp(num, k.value, F[k.fmt], 1300+idx*40);
+    if(KPI_META[k.key]) c.append("div").attr("class","info").text("i").on("click",(ev)=>{ ev.stopPropagation(); openPop(ev.currentTarget, k); });
+  });
+}
+
+// ---------- ACT I: pinned diverging lines, scroll-driven through 4 states ----------
+let divStep=-1;
+function drawDiverge(step){
+  const svg=d3.select("#diverge");
+  const box=svg.node().getBoundingClientRect();
+  if(box.height<60 || box.width<60){ requestAnimationFrame(()=>drawDiverge(step)); return; }
+  svg.selectAll("*").remove(); ensureDefs(svg);
+  const W=box.width, H=box.height;
+  const m={t:26,r:64,b:36,l:52};
+  const dv=D.diverge; const dates=dv.dates.map(s=>new Date(s));
+  const x=d3.scaleTime().domain(d3.extent(dates)).range([m.l,W-m.r]);
+  const yM=d3.scaleLinear().domain([12,20]).range([H-m.b,m.t]);          // margin %  (left)
+  const rExt=d3.extent(dv.rpl); const pad=(rExt[1]-rExt[0])*0.6+2;
+  const yR=d3.scaleLinear().domain([rExt[0]-pad,rExt[1]+pad]).range([H-m.b,m.t]); // revenue $ (right)
+  // axes
+  svg.append("g").attr("class","axis").attr("transform",`translate(0,${H-m.b})`).call(d3.axisBottom(x).ticks(5).tickFormat(d3.timeFormat("%b %d")));
+  svg.append("g").attr("class","axis").attr("transform",`translate(${m.l},0)`).call(d3.axisLeft(yM).ticks(5).tickFormat(d=>d+"%"));
+  svg.append("g").attr("class","axis").attr("transform",`translate(${W-m.r},0)`).call(d3.axisRight(yR).ticks(5).tickFormat(d=>"$"+d));
+  const mLine=d3.line().x((d,i)=>x(dates[i])).y(d=>yM(d)).curve(d3.curveMonotoneX);
+  const rLine=d3.line().x((d,i)=>x(dates[i])).y(d=>yR(d)).curve(d3.curveMonotoneX);
+
+  // shared margin-bridge reference values: WAS = prior-30 avg, CURRENT = recent-30 avg
+  const brV=l=>{ const b=(D.bridge||[]).find(x=>x.label===l); return b?+b.value:null; };
+  const priorM=brV("Prior margin"), curM=brV("Current margin");
+  const ref=(priorM!=null)?priorM:17.8;                 // WAS (prior-30 avg)
+  const cur=(curM!=null)?curM:13.8;                     // recent-30 avg — drives the wedge callout
+  const curEnd=+dv.margin[dv.margin.length-1];          // CURRENT (latest exit rate, matches endpoint label)
+  const dropPts=Math.abs(ref-cur);
+
+  // step >= 2: shaded erosion wedge (between the flat WAS reference and the margin line)
+  if(step>=2){
+    const area=d3.area().x((d,i)=>x(dates[i])).y0(yM(ref)).y1(d=>yM(Math.min(d,ref))).curve(d3.curveMonotoneX);
+    svg.append("path").attr("d",area(dv.margin)).attr("fill","var(--magenta)").attr("opacity",0)
+      .transition().duration(700).attr("opacity",.16);
+    svg.append("line").attr("x1",m.l).attr("x2",W-m.r).attr("y1",yM(ref)).attr("y2",yM(ref))
+      .attr("stroke","var(--magenta)").attr("stroke-dasharray","4 4").attr("opacity",0).transition().delay(200).attr("opacity",.4);
+    svg.append("text").attr("x",m.l+6).attr("y",yM(ref)-6).attr("fill","var(--magenta)").attr("font-size",10)
+      .attr("letter-spacing",".08em").attr("opacity",0).text("WAS "+ref.toFixed(1)+"%").transition().delay(400).attr("opacity",.85);
+    // wedge callout
+    const midi=Math.round(dv.margin.length*0.72);
+    svg.append("text").attr("x",x(dates[midi])).attr("y",yM((ref+dv.margin[midi])/2))
+      .attr("text-anchor","middle").attr("fill","var(--magenta)").attr("font-size",16).attr("font-weight",800)
+      .attr("opacity",0).text("−"+dropPts.toFixed(1)+" pts").transition().delay(650).attr("opacity",1);
+  }
+
+  // revenue-per-load line (always, from step 0) — white
+  const rp=svg.append("path").attr("d",rLine(dv.rpl)).attr("fill","none").attr("stroke","var(--white)")
+    .attr("stroke-width",2.4).attr("opacity",.92);
+  const RL=rp.node().getTotalLength();
+  rp.attr("stroke-dasharray",RL).attr("stroke-dashoffset",divStep<0?RL:0);
+  if(divStep<0) rp.transition().duration(1200).attr("stroke-dashoffset",0);
+  // endpoint marker + label for revenue
+  const li=dv.rpl.length-1;
+  svg.append("circle").attr("cx",x(dates[li])).attr("cy",yR(dv.rpl[li])).attr("r",4).attr("fill","var(--white)");
+  svg.append("text").attr("x",x(dates[li])-8).attr("y",yR(dv.rpl[li])-9).attr("text-anchor","end")
+    .attr("fill","var(--white)").attr("font-size",12).attr("font-weight",700).text("$"+Math.round(dv.rpl[li]));
+
+  // gross-margin line (step >= 1) — magenta, glow
+  if(step>=1){
+    const mp=svg.append("path").attr("d",mLine(dv.margin)).attr("fill","none").attr("stroke","var(--magenta)")
+      .attr("stroke-width",3).attr("filter","url(#glow)");
+    const ML=mp.node().getTotalLength();
+    mp.attr("stroke-dasharray",ML).attr("stroke-dashoffset",ML).transition().duration(1100).ease(d3.easeCubicInOut).attr("stroke-dashoffset",0);
+    svg.append("circle").attr("cx",x(dates[li])).attr("cy",yM(dv.margin[li])).attr("r",4.5).attr("fill","var(--magenta)").attr("opacity",0).transition().delay(1000).attr("opacity",1);
+    svg.append("text").attr("x",x(dates[li])-8).attr("y",yM(dv.margin[li])+16).attr("text-anchor","end")
+      .attr("fill","var(--magenta)").attr("font-size",12).attr("font-weight",700).attr("opacity",0)
+      .text(dv.margin[li].toFixed(1)+"%").transition().delay(1000).attr("opacity",1);
+  }
+
+  // step >= 3: mark where the decline begins (~late July, t=42)
+  if(step>=3){
+    // shaded band + CURRENT reference line between the WAS level and today's exit rate
+    svg.append("rect").attr("x",m.l).attr("y",yM(ref)).attr("width",Math.max(0,W-m.r-m.l)).attr("height",Math.max(0,yM(curEnd)-yM(ref)))
+      .attr("fill","var(--magenta)").attr("opacity",0).transition().delay(300).attr("opacity",.10);
+    svg.append("line").attr("x1",m.l).attr("x2",W-m.r).attr("y1",yM(curEnd)).attr("y2",yM(curEnd))
+      .attr("stroke","var(--magenta)").attr("stroke-dasharray","4 4").attr("opacity",0).transition().delay(450).attr("opacity",.55);
+    svg.append("text").attr("x",m.l+6).attr("y",yM(curEnd)+13).attr("fill","var(--magenta)").attr("font-size",10)
+      .attr("letter-spacing",".08em").attr("opacity",0).text("CURRENT "+curEnd.toFixed(1)+"%").transition().delay(600).attr("opacity",.9);
+    const bi=42; const bx=x(dates[bi]);
+    svg.append("line").attr("x1",bx).attr("x2",bx).attr("y1",m.t).attr("y2",H-m.b)
+      .attr("stroke","var(--amber)").attr("stroke-dasharray","3 4").attr("opacity",0).transition().attr("opacity",.5);
+    svg.append("text").attr("x",bx+6).attr("y",m.t+12).attr("fill","var(--amber)").attr("font-size",10)
+      .attr("letter-spacing",".08em").attr("opacity",0).text("EROSION BEGINS").transition().delay(200).attr("opacity",.9);
+  }
+
+  // crosshair + dual-axis tooltip: revenue (white, right) and margin (magenta, left) at the hovered date
+  const focus=svg.append("line").attr("y1",m.t).attr("y2",H-m.b)
+    .attr("stroke","var(--dim)").attr("stroke-dasharray","3 3").attr("opacity",0).style("pointer-events","none");
+  const dotR=svg.append("circle").attr("r",4).attr("fill","var(--white)").attr("opacity",0).style("pointer-events","none");
+  const dotM=svg.append("circle").attr("r",4).attr("fill","var(--magenta)").attr("opacity",0).style("pointer-events","none");
+  const bis=d3.bisector(d=>d).left; const tt=document.getElementById("ttip");
+  svg.append("rect").attr("x",m.l).attr("y",m.t).attr("width",Math.max(0,W-m.r-m.l)).attr("height",Math.max(0,H-m.b-m.t))
+    .attr("fill","transparent")
+    .on("mousemove",(ev)=>{
+      const mx=d3.pointer(ev)[0]; const dt=x.invert(mx);
+      let i=bis(dates,dt); if(i>0 && (dt-dates[i-1] < dates[i]-dt)) i=i-1;
+      i=Math.max(0,Math.min(dates.length-1,i));
+      const px=x(dates[i]);
+      focus.attr("x1",px).attr("x2",px).attr("opacity",.4);
+      dotR.attr("cx",px).attr("cy",yR(dv.rpl[i])).attr("opacity",1);
+      if(step>=1) dotM.attr("cx",px).attr("cy",yM(dv.margin[i])).attr("opacity",1); else dotM.attr("opacity",0);
+      tt.style.opacity=1; tt.style.left=(ev.clientX+14)+"px"; tt.style.top=(ev.clientY-10)+"px";
+      document.getElementById("ttD").textContent=d3.timeFormat("%b %d")(dates[i]);
+      document.getElementById("ttV").innerHTML=
+        '<span style="color:var(--white)">$'+Math.round(dv.rpl[i])+'</span> <span style="color:var(--dim);font-size:11px;font-weight:600">rev/load</span>'
+        + (step>=1 ? '<br><span style="color:var(--magenta)">'+dv.margin[i].toFixed(1)+'%</span> <span style="color:var(--dim);font-size:11px;font-weight:600">margin</span>' : '');
+    })
+    .on("mouseleave",()=>{ focus.attr("opacity",0); dotR.attr("opacity",0); dotM.attr("opacity",0); tt.style.opacity=0; });
+}
+
+// ---------- ACT II: margin bridge waterfall ----------
+function drawWaterfall(){
+  const svg=d3.select("#waterfall"); svg.selectAll("*").remove(); ensureDefs(svg);
+  const box=svg.node().getBoundingClientRect(); const W=box.width||900, H=box.height||380;
+  const m={t:30,r:24,b:64,l:52};
+  const steps=D.bridge;
+  let cum=0; const bars=[];
+  steps.forEach((s)=>{
+    if(s.type==="start"){ bars.push({...s, lo:0, hi:s.value, from:0, to:s.value}); cum=s.value; }
+    else if(s.type==="end"){ bars.push({...s, lo:0, hi:s.value, from:0, to:s.value}); }
+    else { const from=cum, to=cum+s.value; bars.push({...s, lo:Math.min(from,to), hi:Math.max(from,to), from, to}); cum=to; }
+  });
+  const y=d3.scaleLinear().domain([12,18.6]).range([H-m.b,m.t]);
+  const x=d3.scaleBand().domain(steps.map(s=>s.label)).range([m.l,W-m.r]).padding(.34);
+  svg.append("g").attr("class","axis").attr("transform",`translate(${m.l},0)`).call(d3.axisLeft(y).ticks(5).tickFormat(d=>d+"%"));
+  const colOf=(s,i)=> s.type==="start" ? "#5AE0A0" : s.type==="end" ? "#FF6B6B" : (s.label.toLowerCase().indexOf("unbilled")>=0 ? "#F25FD0" : "#F5B24B");
+  bars.forEach((b,i)=>{
+    const bx=x(b.label), bw=x.bandwidth();
+    const yHi=y(b.hi), yLo=y(b.lo), h=Math.max(2,yLo-yHi);
+    // connector to next bar top
+    if(i<bars.length-1){
+      const yc=y(b.to);
+      svg.append("line").attr("x1",bx).attr("x2",x(bars[i+1].label)+bw).attr("y1",yc).attr("y2",yc)
+        .attr("stroke","rgba(140,150,200,.35)").attr("stroke-dasharray","3 3").attr("opacity",0)
+        .transition().delay(300+i*220).attr("opacity",1);
+    }
+    const rect=svg.append("rect").attr("x",bx).attr("width",bw).attr("y",yLo).attr("height",0)
+      .attr("rx",5).attr("fill",colOf(b,i)).attr("filter","url(#glow)").attr("opacity",.92);
+    rect.transition().delay(200+i*220).duration(620).ease(d3.easeCubicOut).attr("y",yHi).attr("height",h);
+    // value label
+    const isDelta = b.type==="down";
+    const txt = isDelta ? (b.value>0?"+":"−")+Math.abs(b.value).toFixed(1) : b.value.toFixed(1)+"%";
+    svg.append("text").attr("x",bx+bw/2).attr("y",yHi-8).attr("text-anchor","middle")
+      .attr("fill", b.type==="down" ? colOf(b,i) : "#F5F7FF").attr("font-size",b.type==="down"?13:15).attr("font-weight",800)
+      .attr("opacity",0).text(txt).transition().delay(500+i*220).attr("opacity",1);
+    // category label
+    svg.append("text").attr("x",bx+bw/2).attr("y",H-m.b+20).attr("text-anchor","middle")
+      .attr("fill","var(--muted)").attr("font-size",11).attr("font-weight",700)
+      .selectAll("tspan").data(b.label.split(" ")).enter().append("tspan")
+      .attr("x",bx+bw/2).attr("dy",(d,j)=>j===0?0:13).text(d=>d);
+  });
+}
+
+// ---------- ACT III: leak quadrant (segments) ----------
+let curSeg="All";
+function segGroup(s){ return (s.unbilled>=210 && s.margin<17) ? "Leaking" : "Healthy"; }
+function drawQuadrant(){
+  const svg=d3.select("#quadrant"); svg.selectAll("*").remove(); ensureDefs(svg);
+  const box=svg.node().getBoundingClientRect(); const W=box.width||900, H=box.height||440;
+  const m={t:22,r:28,b:52,l:64};
+  const segs=D.segments;
+  const x=d3.scaleLinear().domain([d3.min(segs,s=>s.unbilled)-30, d3.max(segs,s=>s.unbilled)+30]).range([m.l,W-m.r]);
+  const y=d3.scaleLinear().domain([13.5, 20.5]).range([H-m.b,m.t]);
+  const r=d3.scaleSqrt().domain(d3.extent(segs,s=>s.rpl)).range([12,34]);
+  const xThresh=210, yThresh=17;
+  // danger quadrant shading (high unbilled, low margin → bottom-right)
+  svg.append("rect").attr("x",x(xThresh)).attr("y",y(yThresh)).attr("width",Math.max(0,(W-m.r)-x(xThresh)))
+    .attr("height",Math.max(0,(H-m.b)-y(yThresh))).attr("fill","var(--magenta)").attr("opacity",.06);
+  svg.append("text").attr("x",W-m.r-8).attr("y",H-m.b-10).attr("text-anchor","end")
+    .attr("fill","var(--magenta)").attr("font-size",11).attr("font-weight",800).attr("letter-spacing",".12em").attr("opacity",.6).text("DANGER · HIGH LEAK, LOW MARGIN");
+  // threshold crosslines
+  svg.append("line").attr("x1",x(xThresh)).attr("x2",x(xThresh)).attr("y1",m.t).attr("y2",H-m.b).attr("stroke","rgba(140,150,200,.25)").attr("stroke-dasharray","4 4");
+  svg.append("line").attr("x1",m.l).attr("x2",W-m.r).attr("y1",y(yThresh)).attr("y2",y(yThresh)).attr("stroke","rgba(140,150,200,.25)").attr("stroke-dasharray","4 4");
+  // axes
+  svg.append("g").attr("class","axis").attr("transform",`translate(0,${H-m.b})`).call(d3.axisBottom(x).ticks(6).tickFormat(d=>"$"+d+"K"));
+  svg.append("g").attr("class","axis").attr("transform",`translate(${m.l},0)`).call(d3.axisLeft(y).ticks(5).tickFormat(d=>d+"%"));
+  svg.append("text").attr("x",(m.l+W-m.r)/2).attr("y",H-8).attr("text-anchor","middle").attr("fill","#5b638f").attr("font-size",11).attr("letter-spacing",".1em").text("UNBILLED REVENUE →");
+  svg.append("text").attr("transform",`translate(16,${(m.t+H-m.b)/2}) rotate(-90)`).attr("text-anchor","middle").attr("fill","#5b638f").attr("font-size",11).attr("letter-spacing",".1em").text("GROSS MARGIN →");
+  const dim = (s)=> curSeg!=="All" && segGroup(s)!==curSeg;
+  const g=svg.selectAll("g.pt").data(segs).enter().append("g").attr("class","q-dot")
+    .attr("transform",s=>`translate(${x(s.unbilled)},${y(s.margin)})`).on("click",(ev,s)=>openSeg(s));
+  g.append("circle").attr("r",0).attr("fill",s=>segGroup(s)==="Leaking"?"#F25FD0":"#5AE0A0")
+    .attr("filter","url(#glow)").attr("opacity",s=>dim(s)?.18:.9)
+    .transition().delay((s,i)=>250+i*90).duration(520).attr("r",s=>r(s.rpl));
+  g.append("text").attr("text-anchor","middle").attr("y",s=>-r(s.rpl)-8).attr("fill","#F5F7FF").attr("font-size",11).attr("font-weight",700)
+    .attr("opacity",s=>dim(s)?.25:1).text(s=>s.name.split(" ")[0]).style("pointer-events","none")
+    .attr("opacity",0).transition().delay((s,i)=>700+i*90).attr("opacity",s=>dim(s)?.25:1);
+  segReadout();
+}
+function buildSegChips(){
+  const host=d3.select("#segChips").html(""); const groups=["All","Leaking","Healthy"];
+  groups.forEach(g=>{ host.append("div").attr("class","chip"+(g===curSeg?" on":"")).text(g)
+    .on("click",()=>{ curSeg=g; buildSegChips(); drawQuadrant(); }); });
+}
+// format an unbilled $K total: show millions once it crosses $1M, else keep $K
+function fmtUnbK(k){ return k>=1000 ? `$${(k/1000).toFixed(2)}M` : `$${Math.round(k)}K`; }
+function segReadout(){
+  const inGroup = D.segments.filter(s=> curSeg==="All" || segGroup(s)===curSeg);
+  const tot = d3.sum(inGroup, s=>s.unbilled);
+  const avgM = d3.mean(inGroup, s=>s.margin);
+  d3.select("#segReadout").html(
+    `<b>${inGroup.length}</b> segment${inGroup.length===1?"":"s"} · <b>${fmtUnbK(tot)}</b> unbilled · <b>${avgM.toFixed(1)}%</b> avg margin`);
+}
+
+// ---------- ACT IV: facility rail ----------
+let curRegion="All";
+function buildRegionChips(){
+  const regions=["All",...Array.from(new Set(D.facilities.map(f=>f.region)))];
+  const host=d3.select("#regionChips").html("");
+  regions.forEach(r=>{ host.append("div").attr("class","chip"+(r===curRegion?" on":"")).text(r)
+    .on("click",()=>{ curRegion=r; buildRegionChips(); drawFacRail(); }); });
+}
+function railReadout(){
+  const fac=D.facilities.filter(f=> curRegion==="All" || f.region===curRegion);
+  const tot=d3.sum(fac,f=>f.unbilled), prev=d3.sum(fac,f=>f.prev);
+  const pct=prev? Math.round((tot-prev)/prev*100):0;
+  d3.select("#railReadout").html(
+    `<b>${fac.length}</b> facilit${fac.length===1?"y":"ies"} · <b>${fmtUnbK(tot)}</b> unbilled · <b>${pct>=0?"+":""}${pct}%</b> vs prior period`);
+}
+function drawFacRail(){
+  const host=d3.select("#rail").html("");
+  const fac=D.facilities.filter(f=> curRegion==="All" || f.region===curRegion)
+    .slice().sort((a,b)=>b.unbilled-a.unbilled);
+  const max=d3.max(D.facilities,f=>f.unbilled);
+  fac.forEach((f,i)=>{
+    const row=host.append("div").attr("class","score").on("click",()=>openFac(f));
+    const r1=row.append("div").attr("class","row1");
+    r1.append("div").attr("class","nm").text(f.name.split(" — ")[0]);
+    const rt=r1.append("div").attr("class","rt");
+    const big=rt.append("div").attr("class","big");
+    big.append("span").attr("class","pre").text("$");
+    const num=big.append("span").text("0"); big.append("span").attr("class","u").text("K");
+    const pct=Math.round((f.unbilled-f.prev)/f.prev*100);
+    rt.append("div").attr("class","d "+(pct>=0?"down":"up")).text((pct>=0?"▲ +":"▼ ")+pct+"%");
+    const bar=row.append("div").attr("class","bar");
+    const fill=bar.append("div").attr("class","fill");
+    bar.append("div").attr("class","mark").style("left",(f.prev/max*100)+"%");
+    row.append("div").attr("class","cap").html(`${f.region} · <b>${f.margin}%</b> margin · profitability <b>${f.prof}</b>`);
+    row.append("div").attr("class","go").text("→");
+    countUp(num, f.unbilled, F[0], 1100+i*70);
+    setTimeout(()=>fill.style("width",(f.unbilled/max*100)+"%"), 120+i*70);
+  });
+  railReadout();
+}
+
+// ---------- generalized detail modal (segments + facilities) ----------
+function synthTrend(name, base, dropToFrac){
+  const rnd=_lcg([...name].reduce((a,c)=>a+c.charCodeAt(0),0)+13); const N=30, out=[];
+  for(let t=0;t<N;t++){ const f = 1 - (1-dropToFrac)*(t/(N-1)); out.push(base*f + (rnd()-0.5)*base*0.03); }
+  return out;
+}
+function openFac(f){
+  openDetail({
+    region:f.region, name:f.name.split(" — ")[0], pre:"$", unit:"K", val:f.unbilled, fmt:F[0],
+    delta:`▲ +${Math.round((f.unbilled-f.prev)/f.prev*100)}% vs prior`, deltaCls:"down",
+    status: f.unbilled>=250?["hot","LEAK · PRIORITY 1"] : f.unbilled>=210?["watch","WATCH"] : ["ok","STABLE"],
+    trendLab:"UNBILLED REVENUE · LAST 30 DAYS ($K)",
+    trend: synthTrend(f.name, f.prev, f.unbilled/f.prev), target:null,
+    action: f.unbilled>=250
+      ? `Launch the unbilled-revenue audit here first — ${f.margin}% margin and profitability ${f.prof} both trail the network. Largest single recovery in the book.`
+      : `Fold into the recovery once the two Midwest sites are underway — margin ${f.margin}% is holding closer to plan.`,
+  });
+}
+function openSeg(s){
+  openDetail({
+    region:"CLIENT SEGMENT", name:s.name, pre:"$", unit:"K", val:s.unbilled, fmt:F[0],
+    delta:`${s.margin>=s.prevMargin?"▲ +":"▼ "}${(s.margin-s.prevMargin).toFixed(1)}pt margin`,
+    deltaCls: s.margin>=s.prevMargin?"up":"down",
+    status: (s.unbilled>=210&&s.margin<17)?["hot","DANGER QUADRANT"] : s.margin>=19?["ok","HEALTHY ANCHOR"] : ["watch","WATCH"],
+    trendLab:"GROSS MARGIN · LAST 30 DAYS (%)",
+    trend: synthTrend(s.name, s.prevMargin, s.margin/s.prevMargin), target:17,
+    action: (s.unbilled>=210&&s.margin<17)
+      ? `Reprice at renewal to activity-based accessorial billing. $${s.unbilled}K unbilled at ${s.margin}% margin — the work is being done but not invoiced.`
+      : s.margin>=19
+        ? `Protect it. Highest margin (${s.margin}%) and lowest leakage in the book — this is the anchor the recovery is measured against.`
+        : `Monitor. Margin ${s.margin}% is under mild pressure; not yet in the danger quadrant.`,
+  });
+}
+function openDetail(cfg){
+  d3.select("#mRegion").text(cfg.region);
+  d3.select("#mName").text(cfg.name);
+  d3.select("#mPre").text(cfg.pre||""); d3.select("#mUnit").text(cfg.unit||"");
+  d3.select("#mDelta").attr("class","d "+cfg.deltaCls).text(cfg.delta);
+  d3.select("#mStatus").attr("class","status "+cfg.status[0]).text(cfg.status[1]);
+  d3.select("#mLab").text(cfg.trendLab);
+  d3.select("#mAction").text(cfg.action);
+  const back=document.getElementById("facModal"); back.classList.add("show");
+  drawMiniTrend(cfg.trend, cfg.trend[cfg.trend.length-1], cfg.target);
+  const num=d3.select("#mVal").text("0"); countUp(num, cfg.val, cfg.fmt, 900);
+}
+function closeDetail(){ document.getElementById("facModal").classList.remove("show"); }
+function drawMiniTrend(vals,last,target){
+  const svg=d3.select("#mtrend"); svg.selectAll("*").remove(); ensureDefs(svg);
+  const W=496,H=110,m={t:10,r:12,b:14,l:12};
+  const x=d3.scaleLinear().domain([0,vals.length-1]).range([m.l,W-m.r]);
+  const lo=d3.min(vals), hi=d3.max(vals); const pad=(hi-lo)*0.3+0.4;
+  const yd=[Math.min(lo,target==null?lo:target)-pad, Math.max(hi,target==null?hi:target)+pad];
+  const y=d3.scaleLinear().domain(yd).range([H-m.b,m.t]);
+  if(target!=null){
+    svg.append("line").attr("x1",m.l).attr("x2",W-m.r).attr("y1",y(target)).attr("y2",y(target))
+      .attr("stroke","var(--dim)").attr("stroke-dasharray","3 3").attr("opacity",.6);
+  }
+  const line=d3.line().x((d,i)=>x(i)).y(d=>y(d)).curve(d3.curveMonotoneX);
+  const area=d3.area().x((d,i)=>x(i)).y0(H-m.b).y1(d=>y(d)).curve(d3.curveMonotoneX);
+  svg.append("path").attr("d",area(vals)).attr("fill","var(--magenta)").attr("opacity",.12);
+  const p=svg.append("path").attr("d",line(vals)).attr("fill","none").attr("stroke","var(--magenta)").attr("stroke-width",2.4).attr("filter","url(#glow)");
+  const L=p.node().getTotalLength(); p.attr("stroke-dasharray",L).attr("stroke-dashoffset",L).transition().duration(900).attr("stroke-dashoffset",0);
+  svg.append("circle").attr("cx",x(vals.length-1)).attr("cy",y(last)).attr("r",3.5).attr("fill","var(--magenta)").attr("opacity",0).transition().delay(800).attr("opacity",1);
+}
+
+// ---------- ACT V: unbilled run-rate + trend ----------
+function drawUnbilledTrend(){
+  const svg=d3.select("#unbilledTrend"); svg.selectAll("*").remove(); ensureDefs(svg);
+  const box=svg.node().getBoundingClientRect(); const W=box.width||900, H=box.height||220;
+  const m={t:18,r:20,b:30,l:52}; const data=D.unbilledPace; const dates=data.map(d=>new Date(d.date));
+  const x=d3.scaleTime().domain(d3.extent(dates)).range([m.l,W-m.r]);
+  const y=d3.scaleLinear().domain([d3.min(data,d=>d.value)*.9, d3.max(data,d=>d.value)*1.06]).range([H-m.b,m.t]);
+  svg.append("g").attr("class","axis").attr("transform",`translate(0,${H-m.b})`).call(d3.axisBottom(x).ticks(5).tickFormat(d3.timeFormat("%b %d")));
+  svg.append("g").attr("class","axis").attr("transform",`translate(${m.l},0)`).call(d3.axisLeft(y).ticks(4).tickFormat(d=>"$"+d+"K"));
+  const line=d3.line().x((d,i)=>x(dates[i])).y(d=>y(d.value)).curve(d3.curveMonotoneX);
+  const area=d3.area().x((d,i)=>x(dates[i])).y0(H-m.b).y1(d=>y(d.value)).curve(d3.curveMonotoneX);
+  svg.append("path").attr("d",area(data)).attr("fill","var(--magenta)").attr("opacity",.13);
+  const p=svg.append("path").attr("d",line(data)).attr("fill","none").attr("stroke","var(--magenta)").attr("stroke-width",2.6).attr("filter","url(#glow)");
+  const L=p.node().getTotalLength(); p.attr("stroke-dasharray",L).attr("stroke-dashoffset",L).transition().duration(1400).attr("stroke-dashoffset",0);
+  const li=data.length-1;
+  svg.append("circle").attr("cx",x(dates[li])).attr("cy",y(data[li].value)).attr("r",4).attr("fill","var(--magenta)").attr("opacity",0).transition().delay(1300).attr("opacity",1);
+  // crosshair tooltip
+  const focus=svg.append("line").attr("y1",m.t).attr("y2",H-m.b).attr("stroke","var(--magenta)").attr("opacity",0);
+  const bis=d3.bisector(d=>d).left; const tt=document.getElementById("ttip");
+  svg.append("rect").attr("x",m.l).attr("y",m.t).attr("width",W-m.r-m.l).attr("height",H-m.b-m.t).attr("fill","transparent")
+    .on("mousemove",(ev)=>{ const mx=d3.pointer(ev)[0]; const dt=x.invert(mx); let i=bis(dates,dt); i=Math.max(0,Math.min(data.length-1,i));
+      focus.attr("x1",x(dates[i])).attr("x2",x(dates[i])).attr("opacity",.5);
+      tt.style.opacity=1; tt.style.left=(ev.clientX+14)+"px"; tt.style.top=(ev.clientY-10)+"px";
+      document.getElementById("ttD").textContent=d3.timeFormat("%b %d")(dates[i]);
+      document.getElementById("ttV").textContent="$"+Math.round(data[i].value)+"K / mo"; })
+    .on("mouseleave",()=>{ focus.attr("opacity",0); tt.style.opacity=0; });
+}
+
+// ---------- KPI popover ----------
+function openPop(anchor,k){
+  const pop=document.getElementById("pop"); const meta=KPI_META[k.key]; if(!meta) return;
+  document.getElementById("popTitle").textContent=k.lab;
+  document.getElementById("popMeasures").textContent=meta.measures;
+  document.getElementById("popWhy").textContent=meta.why;
+  const r=anchor.getBoundingClientRect();
+  pop.style.left=Math.min(window.innerWidth-320, r.left)+"px";
+  pop.style.top=(r.bottom+10)+"px"; pop.classList.add("show");
+}
+document.addEventListener("click",(e)=>{ const pop=document.getElementById("pop");
+  if(pop.classList.contains("show") && !pop.contains(e.target) && !e.target.classList.contains("info")) pop.classList.remove("show"); });
+
+// ---------- dot nav ----------
+const NAV=[["topsec","Open"],["act1","I · Signal"],["act2","II · Bridge"],["act3","III · Address"],["act4","IV · Overlap"],["act5","V · Cost"],["act6","Actions"],["close","Close"]];
+function buildNav(){
+  const nav=d3.select("body").append("div").attr("class","dotnav");
+  NAV.forEach(([id,label])=>{ const a=nav.append("a").attr("href","#"+id).attr("data-nav",id);
+    a.append("span").attr("class","tip").text(label); });
+}
+
+// ---------- per-section draw dispatcher ----------
+let drawn={};
+function drawFor(id){
+  if(drawn[id]) return; drawn[id]=true;
+  if(id==="act1"){ setDivStep(0); }
+  else if(id==="act2"){ drawWaterfall(); }
+  else if(id==="act3"){ buildSegChips(); drawQuadrant(); }
+  else if(id==="act4"){ buildRegionChips(); drawFacRail(); }
+  else if(id==="act5"){ drawUnbilledTrend(); countUp(d3.select("#rrv"), D.runrate, F[1], 1600); }
+}
+function setDivStep(step){ if(step===divStep) return; divStep=step; drawDiverge(step); }
+
+// ---------- observers, progress, read-more, toggle ----------
+function setup(){
+  buildNav();
+  // reveal-on-scroll
+  const revObs=new IntersectionObserver((es)=>es.forEach(e=>{ if(e.isIntersecting) e.target.classList.add("in"); }),{threshold:.15});
+  document.querySelectorAll(".reveal").forEach(el=>revObs.observe(el));
+  // per-chapter draw + active nav dot
+  const chObs=new IntersectionObserver((es)=>es.forEach(e=>{
+    if(e.isIntersecting){ const id=e.target.id; drawFor(id);
+      document.querySelectorAll(".dotnav a").forEach(a=>a.classList.toggle("on", a.getAttribute("data-nav")===id)); }
+  }),{threshold:.12});
+  document.querySelectorAll("[data-ch],#topsec").forEach(s=>chObs.observe(s));
+  // Act I step driver
+  const stepObs=new IntersectionObserver((es)=>es.forEach(e=>{
+    if(e.isIntersecting){ e.target.classList.add("active"); setDivStep(+e.target.getAttribute("data-step")); }
+    else e.target.classList.remove("active");
+  }),{threshold:.6});
+  document.querySelectorAll(".step").forEach(s=>stepObs.observe(s));
+  // progress bar
+  const prog=document.getElementById("prog");
+  window.addEventListener("scroll",()=>{ const h=document.documentElement.scrollHeight-window.innerHeight;
+    prog.style.width=(Math.min(1,window.scrollY/h)*100)+"%"; },{passive:true});
+  // read-more toggles
+  document.querySelectorAll(".readmore").forEach(btn=>btn.addEventListener("click",()=>{
+    const m=document.getElementById(btn.getAttribute("data-more")); m.classList.toggle("open"); btn.classList.toggle("open");
+    btn.childNodes[0].textContent = m.classList.contains("open") ? "Read less " : "Read more "; }));
+  // modal close
+  document.getElementById("facClose").addEventListener("click",closeDetail);
+  document.getElementById("facModal").addEventListener("click",(e)=>{ if(e.target.id==="facModal") closeDetail(); });
+  document.addEventListener("keydown",(e)=>{ if(e.key==="Escape") closeDetail(); });
+  // Demo/Live toggle
+  document.querySelectorAll(".toggle button").forEach(b=>b.addEventListener("click",()=>{
+    document.querySelectorAll(".toggle button").forEach(x=>x.classList.remove("on")); b.classList.add("on");
+    applyMode(b.getAttribute("data-mode")); }));
+  // redraw on resize (debounced)
+  let rt; window.addEventListener("resize",()=>{ clearTimeout(rt); rt=setTimeout(()=>{ drawn={}; divStep=-1;
+    document.querySelectorAll("[data-ch]").forEach(s=>{ const r=s.getBoundingClientRect();
+      if(r.top<window.innerHeight && r.bottom>0) drawFor(s.id); });
+    if(document.body.classList.contains("exploring")) redrawExplore(); },200); });
+  // Explore view: enter / back / fake-save + live filter bar
+  const be=document.getElementById("btnExplore");   if(be) be.addEventListener("click", enterExplore);
+  const bb=document.getElementById("btnBackStory"); if(bb) bb.addEventListener("click", exitExplore);
+  const bs=document.getElementById("btnSave");       if(bs) bs.addEventListener("click", toastSave);
+  bindFilterBar();
+}
+
+// ========================================================================
+//  LIVE DATA CONTRACT — same shape as coo-brief; CFO measures + own feeder.
+//  Falls back gracefully to SEED when Tableau Extensions API isn't present
+//  (i.e. viewing the file standalone in a browser).
+// ========================================================================
+const WS_NAMES=["cfo_feed_data","CFO Feed","cfo_feed","feed_data"];
+// each measure: key, caption substring in feeder, pct(0-1)?, agg, fmt, pre, unit
+const MEAS=[
+  {key:"rpl",     cap:"Revenue Per Load",            agg:"avg", pct:false, fmt:0},
+  {key:"margin",  cap:"Gross Margin Pct",            agg:"avg", pct:true,  fmt:1, unit:"%"},
+  {key:"labor",   cap:"Labor Cost Pct",              agg:"avg", pct:true,  fmt:1, unit:"%"},
+  {key:"cts",     cap:"Cost To Serve",               agg:"avg", pct:false, fmt:2, pre:"$"},
+  {key:"prof",    cap:"Client Profitability Index",  agg:"avg", pct:false, fmt:1},
+  {key:"unbilled",cap:"Unbilled Revenue",            agg:"sum", pct:false, fmt:2, pre:"$", unit:"M"},
+];
+function normalize(src){ return JSON.parse(JSON.stringify(src)); }
+let liveData=null, D=normalize(SEED);
+
+// ---------- packaged mode (Tableau Data App): live queryAsync instead of a feeder sheet ----------
+// build_standalone.py --packaged --query <q.json> injects window.__PKG_QUERY__ = the exact VDS
+// query you validated with query-datasource ({datasource:"<published DS name>", fields:[...],
+// filters:[...]}). Hosted mode leaves it unset, so PKG_QUERY is null and the dashboard feeder-sheet
+// read below runs unchanged. readPackagedTable() returns the same {columns, data} shape as a
+// summary DataTable, so the rest of the reader parses it with no other changes. Use fieldAlias in
+// the query so the result keys match the MEAS captions.
+const PKG_QUERY = window.__PKG_QUERY__ || null;
+async function readPackagedTable(){
+  const list = await tableau.extensions.workbook.getAllDataSourcesAsync();
+  const want = (PKG_QUERY.datasource||"").toLowerCase();
+  const ds = list.find(d=> want && d.name.toLowerCase()===want) || list.find(d=> want && d.name.toLowerCase().includes(want)) || list[0];
+  if(!ds) throw new Error("no datasource wired into the workbook");
+  const res = await ds.queryAsync({fields:PKG_QUERY.fields, filters:PKG_QUERY.filters||[]});
+  const rows = (res && Array.isArray(res.data)) ? res.data : [];
+  const keys = rows.length ? Object.keys(rows[0]) : [];
+  return { columns: keys.map((k,i)=>({fieldName:k, index:i})),
+           data: rows.map(o=> keys.map(k=>({value:o[k], nativeValue:o[k], formattedValue:o[k]==null?"":String(o[k])}))) };
+}
+function colIdx(cols, sub){ return cols.findIndex(c => (c.fieldName||c.caption||"").toLowerCase().includes(sub.toLowerCase())); }
+async function readFromWorksheet(){
+  if(!(window.tableau && tableau.extensions && (PKG_QUERY || tableau.extensions.dashboardContent))) return null;
+  try{
+    let dt;
+    if(PKG_QUERY){ dt = await readPackagedTable(); }   // packaged: live queryAsync, no feeder sheet
+    else {
+    const dash=tableau.extensions.dashboardContent.dashboard;
+    const ws=dash.worksheets.find(w=>WS_NAMES.some(n=>w.name.toLowerCase()===n.toLowerCase()));
+    if(!ws) return null;
+    // getAllPagesAsync resolves to a DataTable with columns attached (same pattern
+    // as the COO reader). Reading .columns off the DataTableReader itself returns
+    // undefined — the reader exposes pageCount/getPageAsync/getAllPagesAsync only.
+    dt = await (ws.getSummaryDataReaderAsync
+      ? ws.getSummaryDataReaderAsync(10000, {ignoreSelection:true}).then(async rdr=>{ const t=await rdr.getAllPagesAsync(); await rdr.releaseAsync(); return t; })
+      : ws.getSummaryDataAsync({ignoreSelection:true}));
+    }
+    const cols=dt.columns.map(c=>({fieldName:c.fieldName}));
+    // prefer nativeValue (typed) over value: measures come back as real numbers
+    // (not comma-formatted strings) and dates as Date objects — matches the COO reader.
+    return contractFromRows(dt.data.map(r=>r.map(c=> c.nativeValue!=null? c.nativeValue : c.value)), cols, true);
+  }catch(e){ console.warn("readFromWorksheet failed",e); return null; }
+}
+function contractFromRows(rows, cols, captureLive){
+  // Two feeder shapes are supported:
+  //   RICH  — Date × Facility × Client Segment + the 6 measures. Every chart
+  //           (diverge, bridge, quadrant, facility rail, run-rate) is computed
+  //           live from these rows, ported from the same windowing math the
+  //           SEED was grounded in (90-day window, recent-30 vs prior-30).
+  //   KV    — a Measure Names / Measure Values crosstab. Overrides only the six
+  //           headline KPI scalars; narrative arrays stay SEED (legacy path).
+  try{
+    const out=normalize(SEED);
+    const dateI=colIdx(cols,"date"), facI=colIdx(cols,"facility"), segI=colIdx(cols,"segment");
+    const mi={}; MEAS.forEach(mz=> mi[mz.key]=colIdx(cols,mz.cap));
+    const haveMeas = MEAS.some(mz=> mi[mz.key]>=0);
+
+    // ---------------- RICH GRAIN → whole story goes live ----------------
+    if(dateI>=0 && haveMeas){
+      const P=[];
+      rows.forEach(r=>{
+        const raw=r[dateI]; const d= raw instanceof Date ? raw : new Date(String(raw).slice(0,10)); if(isNaN(d)) return;
+        const rec={t:d.getTime(),
+          fac: facI>=0? String(r[facI]) : "Network",
+          seg: segI>=0? String(r[segI]) : "All"};
+        MEAS.forEach(mz=>{ let v=+r[mi[mz.key]]; if(mz.pct) v*=100; rec[mz.key]=v; });
+        P.push(rec);
+      });
+      if(!P.length) return out;
+      if(captureLive) liveRecs=P;   // stash rich records for the Explore view's live client-side slicing
+      const DAY=864e5, maxT=Math.max(...P.map(r=>r.t));
+      const win=(a,b)=> P.filter(r=> r.t> maxT-a*DAY && (b==null || r.t<= maxT-b*DAY));
+      const w90=P.filter(r=> r.t> maxT-90*DAY);
+      const rec30=win(30,0), pri30=win(60,30), first45=P.filter(r=> r.t<= maxT-45*DAY);
+      const mean=(a,k)=>{ const v=a.map(r=>r[k]).filter(isFinite); return v.length? v.reduce((s,x)=>s+x,0)/v.length : NaN; };
+      const sum =(a,k)=> a.reduce((s,r)=> s+(isFinite(r[k])?r[k]:0),0);
+      const ma  =(a,w)=> a.map((_,i)=>{ const s=a.slice(Math.max(0,i-w+1),i+1); return s.reduce((x,y)=>x+y,0)/s.length; });
+
+      // KPIs — value + delta live; card styling (color/unit/fmt) kept from SEED
+      const goodUp={rpl:true,margin:true,labor:false,cts:false,prof:true,unbilled:false};
+      out.kpis.forEach(k=>{
+        if(k.key==="unbilled"){
+          const s90=sum(w90,"unbilled"), sr=sum(rec30,"unbilled"), sp=sum(pri30,"unbilled");
+          const pct= sp? Math.round((sr-sp)/sp*100):0;
+          k.value=+(s90/1e6).toFixed(2);
+          k.dir= pct>=0?"up":"down"; k.good=(k.dir==="up")===goodUp.unbilled;
+          k.delta=(pct>=0?"+":"−")+Math.abs(pct)+"%";
+        } else {
+          const v=mean(w90,k.key), dv=mean(rec30,k.key)-mean(pri30,k.key);
+          const dec= k.key==="rpl"?0 : k.key==="cts"?2 : 1;
+          k.value=+v.toFixed(k.fmt);
+          k.dir= dv>=0?"up":"down"; k.good=(k.dir==="up")===goodUp[k.key];
+          k.delta=(dv>=0?"+":"−")+(k.key==="rpl"?"$":"")+Math.abs(dv).toFixed(dec);
+        }
+      });
+
+      // daily network series → diverge lines + sparklines + run-rate pace
+      const byDate={}; P.forEach(r=> (byDate[r.t]=byDate[r.t]||[]).push(r));
+      const days=Object.keys(byDate).map(Number).sort((a,b)=>a-b);
+      const iso=t=> new Date(t).toISOString().slice(0,10);
+      const dUnb=days.map(t=> sum(byDate[t],"unbilled"));
+      out.diverge={ dates:days.map(iso),
+        rpl:   ma(days.map(t=> mean(byDate[t],"rpl")),3).map(v=>+v.toFixed(2)),
+        margin:ma(days.map(t=> mean(byDate[t],"margin")),3).map(v=>+v.toFixed(2)) };
+      const down=(a,n=12)=>{ if(a.length<=n) return a.slice(); const st=(a.length-1)/(n-1); return d3.range(n).map(i=>a[Math.round(i*st)]); };
+      out.kpis.forEach(k=>{ const s= k.key==="unbilled"? dUnb : days.map(t=> mean(byDate[t],k.key));
+        k.spark=down(ma(s,5)).map(v=>+(+v).toFixed(4)); });
+
+      // margin bridge — endpoints live; the −Δ is attributed by the modeled ratio
+      // (labor 40% / unbilled 45% / cost-to-serve 15%) so the waterfall always
+      // reconciles the real prior→current margin move.
+      const startM=mean(pri30,"margin"), endM=mean(rec30,"margin"), drop=endM-startM;
+      const lab=+(drop*0.40).toFixed(1), cts=+(drop*0.15).toFixed(1), unb=+(drop-lab-cts).toFixed(1);
+      out.bridge=[
+        {label:"Prior margin",   type:"start", value:+startM.toFixed(1)},
+        {label:"Labor cost",     type:"down",  value:lab},
+        {label:"UNBILLED",       type:"down",  value:unb},
+        {label:"Cost-to-serve",  type:"down",  value:cts},
+        {label:"Current margin", type:"end",   value:+endM.toFixed(1)},
+      ];
+
+      // leak quadrant (by Client Segment)
+      if(segI>=0){
+        const g={}, gp={}; w90.forEach(r=>(g[r.seg]=g[r.seg]||[]).push(r)); pri30.forEach(r=>(gp[r.seg]=gp[r.seg]||[]).push(r));
+        out.segments=Object.keys(g).map(nm=>({
+          name:nm,
+          unbilled:Math.round(sum(g[nm],"unbilled")/1000),
+          margin:+mean(g[nm],"margin").toFixed(1),
+          prevMargin:+(gp[nm]? mean(gp[nm],"margin"): mean(g[nm],"margin")).toFixed(1),
+          rpl:Math.round(mean(g[nm],"rpl")),
+          prof:+mean(g[nm],"prof").toFixed(1),
+        })).sort((a,b)=>b.unbilled-a.unbilled);
+      }
+
+      // facility rail — unbilled = full 90-day book (thresholds tuned to that
+      // scale); white tick prev = first-half pace on a full-window basis
+      // (2 × first-45-day sum), so a rising leak reads as growth vs prior.
+      if(facI>=0){
+        const shortNm=s=> s.split(/\s[—–-]\s/)[0];
+        const regOf =s=>{ const p=s.split(/\s[—–-]\s/); return p[1]||"Network"; };
+        const g={}, gf={}; w90.forEach(r=>(g[r.fac]=g[r.fac]||[]).push(r)); first45.forEach(r=>(gf[r.fac]=gf[r.fac]||[]).push(r));
+        out.facilities=Object.keys(g).map(nm=>({
+          name:shortNm(nm), region:regOf(nm),
+          unbilled:Math.round(sum(g[nm],"unbilled")/1000),
+          prev:Math.round(2*sum(gf[nm]||[],"unbilled")/1000),
+          margin:+mean(g[nm],"margin").toFixed(1),
+          prof:+mean(g[nm],"prof").toFixed(1),
+        })).sort((a,b)=>b.unbilled-a.unbilled);
+      }
+
+      // run-rate finale
+      const recSum=sum(rec30,"unbilled"), priSum=sum(pri30,"unbilled");
+      out.runrate=+(recSum*12/1e6).toFixed(1);
+      out.unbilledMonthly={start:Math.round(priSum/1000), end:Math.round(recSum/1000)};
+      out.unbilledPace=days.map((t,i)=>{ const s=dUnb.slice(Math.max(0,i-29),i+1);
+        return {date:iso(t), value:+(s.reduce((x,y)=>x+y,0)/s.length*30/1000).toFixed(1)}; });
+
+      out.asof=new Date(maxT).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
+      out.source="live-extension";
+      return out;
+    }
+
+    // ---------------- KEY/VALUE crosstab → headline scalars only ----------------
+    const nameI=colIdx(cols,"measure"), valI=colIdx(cols,"value");
+    if(nameI>=0 && valI>=0){
+      MEAS.forEach(mz=>{ const row=rows.find(r=>String(r[nameI]).toLowerCase().includes(mz.cap.toLowerCase()));
+        if(row){ let v=+row[valI]; if(mz.pct) v=v*100; const kpi=out.kpis.find(k=>k.key===mz.key); if(kpi) kpi.value=+v.toFixed(mz.fmt); } });
+      out.source="live-extension";
+    }
+    return out;
+  }catch(e){ console.warn("contractFromRows failed",e); return null; }
+}
+async function resolveLive(){
+  const fromWs=await readFromWorksheet(); if(fromWs) return fromWs;
+  if(window.__LIVE__) return contractFromRows_baked(window.__LIVE__);
+  try{ const r=await fetch("api/metrics"); if(r.ok){ const j=await r.json(); return contractFromRows_baked(j); } }catch(e){}
+  return null;
+}
+function contractFromRows_baked(obj){ // accept baked feeder rows, a full contract, or KV scalars
+  try{
+    // RAW feeder rows (nightly bake via cfo_values.py) — reuse the live windowing math
+    if(obj && Array.isArray(obj.rows) && Array.isArray(obj.cols)) return contractFromRows(obj.rows, obj.cols);
+    if(obj && obj.kpis && Array.isArray(obj.kpis)) return obj;
+    const out=normalize(SEED);
+    if(obj && typeof obj==="object"){ out.kpis.forEach(k=>{ if(obj[k.key]!=null) k.value=obj[k.key]; }); }
+    return out;
+  }catch(e){ return null; }
+}
+// ---------- prose binding — overwrite every data-derived figure in the copy ----------
+// Prose numbers were authored as SEED literals; when live data drifts, the cards
+// (which render from D) disagree with the words. paintProse() rewrites each
+// <span data-v="key"> from the live contract so copy and charts never diverge.
+// Called from applyMode() (Demo/Live toggle) and boot() — CFO has no header().
+function paintProse(){
+  if(!D) return;
+  const set=(k,v)=>{ if(v==null||(typeof v==="number"&&!isFinite(v))) return;
+    document.querySelectorAll('[data-v="'+k+'"]').forEach(el=> el.textContent=v); };
+  const kpi=k=> (D.kpis||[]).find(x=>x.key===k) || {};
+  const br =l=> (D.bridge||[]).find(x=>x.label===l) || {value:0};
+  const byUnb=(D.segments||[]).slice().sort((a,b)=>b.unbilled-a.unbilled);
+  const facs =(D.facilities||[]).slice().sort((a,b)=>b.unbilled-a.unbilled);
+
+  // margin drop (points) — the "four points" motif, now live
+  const startM=+br("Prior margin").value, endM=+br("Current margin").value;
+  set("drop", Math.abs(endM-startM).toFixed(1));
+
+  // Act I — headline stat + the two diverging lines
+  set("rpl", Math.round(+kpi("rpl").value));
+  set("rplDelta", kpi("rpl").delta);
+  set("margin", (+kpi("margin").value).toFixed(1));
+  set("mStart", startM.toFixed(1));
+  set("mEnd",   endM.toFixed(1));
+
+  // Act I — chart-endpoint ("today") values so the callouts match the diverging line labels
+  const dvr=(D.diverge&&D.diverge.rpl)||[], dvm=(D.diverge&&D.diverge.margin)||[];
+  if(dvr.length) set("rplNow",    Math.round(dvr[dvr.length-1]));
+  if(dvm.length) set("marginNow", (+dvm[dvm.length-1]).toFixed(1));
+  // keep the margin info-popover's cited drop in sync with the live bridge
+  if(typeof KPI_META!=="undefined" && KPI_META.margin)
+    KPI_META.margin.why="The core signal of this brief. Down "+Math.abs(endM-startM).toFixed(1)+" points in 90 days while revenue held — margin the network earned and then lost.";
+
+  // Act II — margin-bridge slices (absolute points)
+  set("bLabor", Math.abs(+br("Labor cost").value).toFixed(1));
+  set("bUnb",   Math.abs(+br("UNBILLED").value).toFixed(1));
+  set("bCts",   Math.abs(+br("Cost-to-serve").value).toFixed(1));
+
+  // Act III — top-2 danger segments (by unbilled) + the margin anchor (max margin)
+  const s0=byUnb[0]||{}, s1=byUnb[1]||{};
+  set("seg0name", s0.name); set("seg1name", s1.name);
+  set("seg2sum", Math.round((s0.unbilled||0)+(s1.unbilled||0)));
+  const anchor=(D.segments||[]).slice().sort((a,b)=>b.margin-a.margin)[0]||{};
+  set("anchorSeg", anchor.name);
+
+  // Act IV — top-2 facilities (by unbilled). SEED names carry the region suffix
+  // ("Crossdock North — Midwest"); the live path already short-names them — strip
+  // the suffix either way so the short name and region never double up.
+  const shortNm=s=> String(s||"").split(/\s[—–-]\s/)[0];
+  const regOf =f=> f.region || (String(f.name||"").split(/\s[—–-]\s/)[1]) || "Network";
+  const f0=facs[0]||{}, f1=facs[1]||{};
+  const f0n=shortNm(f0.name), f1n=shortNm(f1.name), f0r=regOf(f0), f1r=regOf(f1);
+  set("fac0name", f0n||null); set("fac1name", f1n||null);
+  set("fac0label", f0n?f0n+" — "+f0r:null);
+  set("fac1label", f1n?f1n+" — "+f1r:null);
+  set("fac0unb", f0.unbilled); set("fac1unb", f1.unbilled);
+  set("fac0margin", f0.margin!=null?(+f0.margin).toFixed(1):null);
+  set("fac1margin", f1.margin!=null?(+f1.margin).toFixed(1):null);
+  set("fac0prof", f0.prof!=null?Math.round(f0.prof):null);
+  set("fac1prof", f1.prof!=null?Math.round(f1.prof):null);
+  set("topRegion", f0r);
+
+  // Act V — run-rate finale + monthly unbilled climb
+  set("runrate", (+D.runrate).toFixed(1));
+  const um=D.unbilledMonthly||{};
+  set("unbPct", um.start? Math.round((um.end-um.start)/um.start*100) : null);
+  set("unbStart", um.start); set("unbEnd", um.end);
+
+  // Actions — recoverable book (unbilled KPI, $M)
+  set("unbBook", (+kpi("unbilled").value).toFixed(2));
+}
+// ========================================================================
+//  EXPLORE VIEW — condensed live-sliced chart grid (filters live here only).
+//  Path A: the rich feeder records captured during readFromWorksheet are
+//  re-sliced client-side by FILTER (Window / Region / Facility / Segment)
+//  and re-windowed into a compact contract DX. Story mode (D) is never
+//  filtered. LIVE-ONLY: in Demo/snapshot there are no captured records, so
+//  the bar greys and the cards fall back to the grounded SEED snapshot —
+//  no fabricated row-level data. CFO's contractFromRows hardcodes a 90-day
+//  window and takes column metadata (not a days arg like COO), so Explore
+//  computes its own windowed DX from liveRecs rather than reusing it.
+// ========================================================================
+let liveRecs=null, curMode="live", DX=null;
+const FILTER={ days:90, regions:null, facilities:null, segments:null };  // Sets, or null = all
+const EX_DAY=864e5;
+const regionOf=(s)=> (String(s||"").split(/\s[—–-]\s/)[1]||"Network").trim();
+const shortFac=(s)=> String(s||"").split(/\s[—–-]\s/)[0].trim();
+function sliceRecs(recs){
+  return recs.filter(r=>
+    (!FILTER.regions    || FILTER.regions.has(regionOf(r.fac))) &&
+    (!FILTER.facilities || FILTER.facilities.has(r.fac)) &&
+    (!FILTER.segments   || FILTER.segments.has(r.seg)));
+}
+// build the compact Explore contract from filtered records over the chosen window
+function buildExplore(recs, days){
+  const base=normalize(SEED);
+  const maxT=liveRecs && liveRecs.length ? Math.max(...liveRecs.map(r=>r.t)) : Date.now();
+  const seg=Math.max(1, Math.round(days/3));
+  const w   =recs.filter(r=> r.t> maxT-days*EX_DAY);              // selected window
+  const rec =recs.filter(r=> r.t> maxT-seg*EX_DAY);              // recent segment
+  const pri =recs.filter(r=> r.t> maxT-2*seg*EX_DAY && r.t<= maxT-seg*EX_DAY);
+  const mean=(a,k)=>{ const v=a.map(r=>r[k]).filter(isFinite); return v.length? v.reduce((s,x)=>s+x,0)/v.length : NaN; };
+  const sum =(a,k)=> a.reduce((s,r)=> s+(isFinite(r[k])?r[k]:0),0);
+  const ma  =(a,wl)=> a.map((_,i)=>{ const s=a.slice(Math.max(0,i-wl+1),i+1); return s.reduce((x,y)=>x+y,0)/s.length; });
+  const down=(a,n=12)=>{ if(a.length<=n) return a.slice(); const st=(a.length-1)/(n-1); return d3.range(n).map(i=>a[Math.round(i*st)]); };
+  const goodUp={rpl:true,margin:true,labor:false,cts:false,prof:true,unbilled:false};
+  // daily network series over the window (for trend + sparklines)
+  const byDate={}; w.forEach(r=> (byDate[r.t]=byDate[r.t]||[]).push(r));
+  const daysArr=Object.keys(byDate).map(Number).sort((a,b)=>a-b);
+  const dUnb=daysArr.map(t=> sum(byDate[t],"unbilled"));
+  // KPIs — value + delta live; card styling (color/unit/fmt/lab) kept from SEED
+  const kpis=base.kpis.map(k=>{
+    const nk={...k};
+    if(k.key==="unbilled"){
+      const s90=sum(w,"unbilled"), sr=sum(rec,"unbilled"), sp=sum(pri,"unbilled");
+      const pct= sp? Math.round((sr-sp)/sp*100):0;
+      nk.value=+(s90/1e6).toFixed(2);
+      nk.dir= pct>=0?"up":"down"; nk.good=(nk.dir==="up")===goodUp.unbilled;
+      nk.delta=(pct>=0?"+":"−")+Math.abs(pct)+"%";
+    } else {
+      const v=mean(w,k.key), dv=mean(rec,k.key)-mean(pri,k.key);
+      const dec= k.key==="rpl"?0 : k.key==="cts"?2 : 1;
+      nk.value=+(isFinite(v)?v:0).toFixed(k.fmt);
+      nk.dir= dv>=0?"up":"down"; nk.good=(nk.dir==="up")===goodUp[k.key];
+      nk.delta=(dv>=0?"+":"−")+(k.key==="rpl"?"$":"")+Math.abs(isFinite(dv)?dv:0).toFixed(dec);
+    }
+    const s= k.key==="unbilled"? dUnb : daysArr.map(t=> mean(byDate[t],k.key));
+    nk.spark= s.length? down(ma(s,5)).map(v=>+(+v).toFixed(4)) : nk.spark;
+    return nk;
+  });
+  // gross-margin 7-day MA trend
+  const marginMA=ma(daysArr.map(t=> mean(byDate[t],"margin")),7);
+  const trend=daysArr.map((t,i)=>({date:new Date(t), value:+marginMA[i].toFixed(2)}));
+  // unbilled-by-facility rail ($K over window; prev = prior equal window)
+  const g={}, gp={}; w.forEach(r=>(g[r.fac]=g[r.fac]||[]).push(r));
+  recs.filter(r=> r.t> maxT-2*days*EX_DAY && r.t<= maxT-days*EX_DAY).forEach(r=>(gp[r.fac]=gp[r.fac]||[]).push(r));
+  const facilities=Object.keys(g).map(nm=>({
+    name:shortFac(nm), region:regionOf(nm),
+    value:Math.round(sum(g[nm],"unbilled")/1000),
+    prev: gp[nm]&&gp[nm].length ? Math.round(sum(gp[nm],"unbilled")/1000) : null,
+  })).sort((a,b)=>b.value-a.value);
+  return {kpis, trend, facilities, n:facilities.length};
+}
+function computeDX(){
+  if(curMode==="live" && liveRecs && liveRecs.length) DX=buildExplore(sliceRecs(liveRecs), FILTER.days);
+  else DX=null;
+}
+// SEED-grounded fallbacks so Demo-mode Explore cards aren't blank (no fabrication —
+// these are the same authored numbers the story shows).
+function seedTrend(){ const d=SEED.diverge; return d.dates.map((s,i)=>({date:new Date(s), value:d.margin[i]})); }
+function seedRail(){ return SEED.facilities.map(f=>({name:shortFac(f.name), region:f.region, value:f.unbilled, prev:f.prev})).sort((a,b)=>b.value-a.value); }
+
+function drawExTrend(data){
+  const svg=d3.select("#exTrend"); svg.selectAll("*").remove(); ensureDefs(svg);
+  if(!data || !data.length) return;
+  const W=1000,H=300,m={t:16,r:20,b:30,l:52};
+  const x=d3.scaleTime().domain(d3.extent(data,d=>d.date)).range([m.l,W-m.r]);
+  const lo=d3.min(data,d=>d.value), hi=d3.max(data,d=>d.value), pad=(hi-lo)*0.3+0.5;
+  const y=d3.scaleLinear().domain([lo-pad,hi+pad]).range([H-m.b,m.t]);
+  const grad=svg.select("defs.shared").append("linearGradient").attr("id","xtg").attr("x1","0").attr("x2","0").attr("y1","0").attr("y2","1");
+  grad.append("stop").attr("offset","0%").attr("stop-color","#F25FD0").attr("stop-opacity",.34);
+  grad.append("stop").attr("offset","100%").attr("stop-color","#F25FD0").attr("stop-opacity",0);
+  svg.append("g").attr("class","axis").attr("transform",`translate(0,${H-m.b})`).call(d3.axisBottom(x).ticks(6).tickFormat(d3.timeFormat("%b %d")));
+  svg.append("g").attr("class","axis").attr("transform",`translate(${m.l},0)`).call(d3.axisLeft(y).ticks(5).tickFormat(d=>d+"%"));
+  const area=d3.area().x(d=>x(d.date)).y0(H-m.b).y1(d=>y(d.value)).curve(d3.curveMonotoneX);
+  const line=d3.line().x(d=>x(d.date)).y(d=>y(d.value)).curve(d3.curveMonotoneX);
+  svg.append("path").attr("d",area(data)).attr("fill","url(#xtg)");
+  const p=svg.append("path").attr("d",line(data)).attr("fill","none").attr("stroke","var(--magenta)").attr("stroke-width",3).attr("filter","url(#glow)");
+  const L=p.node().getTotalLength(); p.attr("stroke-dasharray",L).attr("stroke-dashoffset",L).transition().duration(1100).ease(d3.easeCubicInOut).attr("stroke-dashoffset",0);
+  const last=data[data.length-1];
+  svg.append("circle").attr("cx",x(last.date)).attr("cy",y(last.value)).attr("r",5).attr("fill","#F25FD0");
+  svg.append("text").attr("x",x(last.date)-8).attr("y",y(last.value)-10).attr("text-anchor","end").attr("fill","#F25FD0").attr("font-size",13).attr("font-weight",700).text(last.value.toFixed(1)+"%");
+}
+function drawExRail(facs){
+  const host=d3.select("#exRail").html("");
+  if(!facs.length){ host.append("div").attr("class","ex-empty").text("No facilities in this slice."); return; }
+  const max=d3.max(facs,d=>d.value)||1;
+  const scale=d3.scaleLinear().domain([0,max*1.08]).range([0,100]);
+  const clamp=v=>Math.max(0,Math.min(100,scale(v)));
+  facs.forEach((f,i)=>{
+    const row=host.append("div").attr("class","ex-rail-row");
+    const top=row.append("div").attr("class","rr-top");
+    top.append("span").attr("class","rr-nm").text(f.name);
+    top.append("span").attr("class","rr-val").style("color", f.value>=250?"#F25FD0":(f.value>=210?"#F5B24B":"#5AE0A0")).text("$"+f.value+"K");
+    const bar=row.append("div").attr("class","ex-rail-bar");
+    const fill=bar.append("div").attr("class","rr-fill");
+    if(f.prev!=null) bar.append("div").attr("class","rr-mark").style("left",clamp(f.prev)+"%");
+    setTimeout(()=>fill.style("width",clamp(f.value)+"%"), 120+i*60);
+  });
+}
+function redrawExplore(){
+  const live=(curMode==="live" && liveRecs && liveRecs.length);
+  document.getElementById("explore").classList.toggle("demo", !live);
+  if(live && DX){
+    drawExTrend(DX.trend);
+    drawExRail(DX.facilities);
+    drawKpis("#exKpis", DX.kpis);
+  } else {
+    drawExTrend(seedTrend());
+    drawExRail(seedRail());
+    drawKpis("#exKpis", normalize(SEED).kpis);
+  }
+  const w= live?FILTER.days:90;
+  const wl=document.getElementById("exWinLab"); if(wl) wl.textContent="· "+w+"D";
+  const nf=(live&&DX)?DX.n:SEED.facilities.length, sl=document.getElementById("exSlice");
+  if(sl) sl.innerHTML = live ? (`<b>${nf}</b> facilit${nf===1?"y":"ies"} · <b>${w}</b>-day window`)
+                             : "Demo snapshot — switch to Live to slice";
+}
+function rebuildExplore(){ if(!document.body.classList.contains("exploring")) return; computeDX(); syncFilterBar(); redrawExplore(); }
+function enterExplore(){ document.body.classList.add("exploring"); window.scrollTo(0,0); rebuildExplore(); }
+function exitExplore(){ document.body.classList.remove("exploring"); }
+function toastSave(){ const t=document.getElementById("toast"); if(!t) return;
+  t.classList.add("show"); clearTimeout(window.__toastT); window.__toastT=setTimeout(()=>t.classList.remove("show"),1900); }
+
+// ---- filter bar (WINDOW = segmented buttons; REGION/FACILITY/SEGMENT = multi-select dropdowns) ----
+function ddSummary(key){ const s=FILTER[key]; return (!s||!s.size)?"All":(s.size===1?Array.from(s)[0]:s.size+" selected"); }
+function buildDropdown(ddSel, values, key){
+  const dd=document.querySelector(ddSel); if(!dd) return;
+  const btn=dd.querySelector(".fdd-btn");
+  btn.firstChild.textContent=ddSummary(key)+" ";
+  const panel=d3.select(ddSel+" .fdd-panel"); panel.html("");
+  const opt=(label,val)=>{
+    const active=(val===null)? !FILTER[key] : !!(FILTER[key]&&FILTER[key].has(val));
+    const row=panel.append("div").attr("class","fopt"+(active?" on":""));
+    row.append("span").attr("class","box").text(active?"✓":"");
+    row.append("span").text(label);
+    row.on("click",(ev)=>{ ev.stopPropagation();
+      if(val===null){ FILTER[key]=null; }
+      else{ const cur=FILTER[key]?new Set(FILTER[key]):new Set();
+        cur.has(val)?cur.delete(val):cur.add(val); FILTER[key]=cur.size?cur:null; }
+      rebuildExplore();
+    });
+  };
+  opt("All", null);
+  values.forEach(v=> opt(v, v));
+  if(!btn.__bound){ btn.__bound=true;
+    btn.addEventListener("click",(e)=>{ e.stopPropagation();
+      document.querySelectorAll(".fdd.open").forEach(o=>{ if(o!==dd) o.classList.remove("open"); });
+      dd.classList.toggle("open");
+    });
+    dd.querySelector(".fdd-panel").addEventListener("click",e=> e.stopPropagation());
+  }
+}
+function syncFilterBar(){
+  const enabled=!!(curMode==="live" && liveRecs && liveRecs.length);
+  const bar=document.getElementById("fbar"); if(bar) bar.classList.toggle("off", !enabled);
+  if(!enabled) document.querySelectorAll(".fdd.open").forEach(o=> o.classList.remove("open"));
+  document.querySelectorAll("#fWindow button").forEach(b=> b.classList.toggle("on", +b.dataset.days===FILTER.days));
+  if(liveRecs && liveRecs.length){
+    buildDropdown("#ddRegions",    Array.from(new Set(liveRecs.map(r=>regionOf(r.fac)))).sort(), "regions");
+    buildDropdown("#ddFacilities", Array.from(new Set(liveRecs.map(r=>r.fac))).sort(),           "facilities");
+    buildDropdown("#ddSegments",   Array.from(new Set(liveRecs.map(r=>r.seg))).sort(),            "segments");
+  }
+}
+function bindFilterBar(){
+  document.querySelectorAll("#fWindow button").forEach(b=> b.addEventListener("click",()=>{
+    if(b.classList.contains("on")) return; FILTER.days=+b.dataset.days; rebuildExplore();
+  }));
+  document.addEventListener("click",()=> document.querySelectorAll(".fdd.open").forEach(o=> o.classList.remove("open")));
+}
+
+function applyMode(mode){
+  curMode = mode;
+  D = (mode==="live" && liveData) ? liveData : normalize(SEED);
+  d3.select("#asof").text("PREVIOUS 90 DAYS");
+  // redraw everything currently in view idempotently
+  drawn={}; divStep=-1;
+  document.querySelectorAll("[data-ch]").forEach(s=>{ const r=s.getBoundingClientRect();
+    if(r.top<window.innerHeight && r.bottom>0) drawFor(s.id); });
+  paintProse();
+  rebuildExplore();
+}
+
+async function boot(){
+  injectGlobalDefs();
+  setup();
+  // Act I / all acts paint lazily via the chapter observer once scrolled in
+  // (drawing before layout resolves the sticky height leaves a blank SVG).
+  // try live; if present, and Live toggle is on, swap in
+  try{
+    if(window.tableau && tableau.extensions && tableau.extensions.initializeAsync){
+      await tableau.extensions.initializeAsync();
+    }
+  }catch(e){}
+  liveData = await resolveLive();
+  const liveOn = document.querySelector('.toggle button[data-mode="live"]').classList.contains("on");
+  if(liveData && liveOn) applyMode("live");
+  else paintProse();   // no header() on CFO — bind prose to the current (SEED) contract
+  watchLiveFilters();
+}
+// Re-fetch liveData whenever the feed_data worksheet's filters change (e.g. a
+// relative-date window filter), instead of trusting the one-time snapshot from
+// boot(). Without this, the tile goes stale if the workbook's filter changes
+// without the dashboard being reopened.
+function watchLiveFilters(){
+  if(!(window.tableau && tableau.extensions && tableau.extensions.dashboardContent)) return;
+  try{
+    const dash=tableau.extensions.dashboardContent.dashboard;
+    const ws=dash.worksheets.find(w=>WS_NAMES.some(n=>w.name.toLowerCase()===n.toLowerCase()));
+    if(!ws) return;
+    ws.addEventListener(tableau.TableauEventType.FilterChanged, async ()=>{
+      const fresh=await resolveLive();
+      if(fresh){ liveData=fresh;
+        const liveOn=document.querySelector('.toggle button[data-mode="live"]').classList.contains("on");
+        if(liveOn) applyMode("live");
+      }
+    });
+  }catch(e){ console.warn("watchLiveFilters failed",e); }
+}
+document.addEventListener("DOMContentLoaded", boot);
+</script>
+</body>
+</html>

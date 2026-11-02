@@ -57,6 +57,7 @@ name → delete, or
 
 - `SKILL.md` — the agent's procedure
 - `scripts/pulse.py` — the API client (run with `--help`)
+- `VERSION`, `CHANGELOG.md` — current version and what changed
 - `references/setup.md` — sign-in setup details
 - `references/before-you-begin.md` — the optional checklist
 - `references/data-source-check.md` — published or local data source cases

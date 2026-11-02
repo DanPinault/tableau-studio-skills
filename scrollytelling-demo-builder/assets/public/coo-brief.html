@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>3PL Operations — Running Hot · Daily Brief</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="https://tableau.github.io/extensions-api/lib/tableau.extensions.1.latest.js" async></script>
+<style>
+  /* ============================================================
+     "Running Hot" — dark scrollytelling brief.
+     Structure borrowed from the Laulima Daily Brief (numbered
+     chapters, one hero viz + annotations + narrative each,
+     scroll-triggered entrances). Skin = our dark keynote language
+     (near-black canvas, teal→purple→magenta gradient, glow,
+     count-up). 1600px-wide stage, unlimited height.
+     Same data contract as index.html (SEED / __LIVE__ / api/metrics).
+     ============================================================ */
+  :root{
+    --bg0:#05060e; --bg1:#0a0c1a;
+    --panel:rgba(255,255,255,.03); --panel-brd:rgba(140,150,200,.10);
+    --white:#F5F7FF; --muted:#9AA6D6; --dim:#5b638f;
+    --teal:#35E0D0; --purple:#8B7BFF; --magenta:#F25FD0; --amber:#F5B24B; --red:#FF6B6B; --gold:#F3C556; --green:#5AE0A0;
+    --grad:linear-gradient(90deg,var(--teal),var(--purple));
+    --grad3:linear-gradient(90deg,var(--teal),var(--purple),var(--magenta));
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+    color:var(--white); -webkit-font-smoothing:antialiased; min-height:100%;
+    background:
+      radial-gradient(1200px 700px at 82% -6%, rgba(139,123,255,.14) 0%, rgba(139,123,255,0) 55%),
+      radial-gradient(1000px 620px at 4% 30%, rgba(53,224,208,.09) 0%, rgba(53,224,208,0) 55%),
+      radial-gradient(1000px 700px at 90% 80%, rgba(242,95,208,.08) 0%, rgba(242,95,208,0) 55%),
+      linear-gradient(180deg,var(--bg1) 0%, var(--bg0) 60%, #04050b 100%);
+    background-attachment:fixed;
+  }
+  .wrap{max-width:1600px; margin:0 auto; padding:0 80px}
+  .serif{font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif}
+
+  /* ---------- top bar ---------- */
+  .topbar{position:sticky; top:0; z-index:30; backdrop-filter:blur(10px);
+    background:linear-gradient(180deg,rgba(5,6,14,.82),rgba(5,6,14,.3)); border-bottom:1px solid var(--panel-brd)}
+  .topbar .wrap{display:flex; align-items:center; gap:4px 18px; padding-top:16px; padding-bottom:16px; flex-wrap:wrap}
+  .brand{display:flex; align-items:center; gap:10px; font-weight:800; font-size:15px; letter-spacing:.01em}
+  .brand .dot{width:10px;height:10px;border-radius:50%;background:var(--teal);box-shadow:0 0 12px var(--teal)}
+  .toggle{display:inline-flex; background:rgba(255,255,255,.05); border:1px solid var(--panel-brd); border-radius:999px; padding:3px}
+  .toggle button{border:0; background:transparent; color:var(--muted); font-weight:700; font-size:12px; padding:6px 14px; border-radius:999px; cursor:pointer}
+  .toggle button.on{background:var(--grad); color:#0a0c1a}
+  /* ---- live filter bar (Path A: client-side re-slice of feeder rows) ---- */
+  .fbar{flex-basis:100%; display:flex; align-items:center; gap:14px 26px; flex-wrap:wrap;
+    margin-top:0; padding-top:10px; border-top:1px solid var(--panel-brd)}
+  .fbar .grp{display:flex; align-items:center; gap:9px; flex-wrap:wrap}
+  .fbar .glab{color:var(--dim); font-size:10px; letter-spacing:.16em; font-weight:800}
+  .seg{display:inline-flex; background:rgba(255,255,255,.05); border:1px solid var(--panel-brd); border-radius:999px; padding:3px}
+  .seg button{border:0; background:transparent; color:var(--muted); font-weight:700; font-size:11px; padding:5px 12px; border-radius:999px; cursor:pointer}
+  .seg button.on{background:var(--grad); color:#0a0c1a}
+  /* multi-select dropdown (Region / Facility) */
+  .fdd{position:relative}
+  .fdd-btn{display:inline-flex; align-items:center; gap:9px; justify-content:space-between; min-width:96px;
+    border:1px solid var(--panel-brd); background:rgba(255,255,255,.04); color:var(--white);
+    font-size:11px; font-weight:700; padding:6px 12px; border-radius:999px; cursor:pointer; transition:.15s}
+  .fdd-btn:hover{border-color:var(--muted)}
+  .fdd-btn .car{color:var(--dim); font-size:9px; transform:translateY(1px)}
+  .fdd.open .fdd-btn{border-color:var(--muted)}
+  .fdd.open .fdd-btn .car{transform:translateY(1px) rotate(180deg)}
+  .fdd-panel{display:none; position:absolute; z-index:50; top:calc(100% + 6px); left:0;
+    min-width:210px; max-height:264px; overflow:auto; padding:6px;
+    background:#0b0e1c; border:1px solid var(--panel-brd); border-radius:12px; box-shadow:0 14px 36px rgba(0,0,0,.55)}
+  .fdd.open .fdd-panel{display:block}
+  .fopt{display:flex; align-items:center; gap:10px; padding:7px 9px; border-radius:8px; cursor:pointer;
+    font-size:12px; font-weight:600; color:var(--muted); white-space:nowrap}
+  .fopt:hover{background:rgba(255,255,255,.06); color:var(--white)}
+  .fopt.on{color:var(--white)}
+  .fopt .box{flex:0 0 auto; width:15px; height:15px; border-radius:5px; border:1.5px solid var(--muted);
+    display:inline-flex; align-items:center; justify-content:center; font-size:10px; font-weight:900; color:#0a0c1a}
+  .fopt.on .box{background:var(--grad); border-color:transparent}
+  .fbar.off{opacity:.35; pointer-events:none; filter:saturate(.4)}
+  .pill{padding:7px 14px; border-radius:999px; font-size:12px; font-weight:700; color:var(--purple);
+    background:rgba(139,123,255,.12); border:1px solid rgba(139,123,255,.35)}
+  .spacer{flex:1}
+  .prog{position:absolute; left:0; bottom:-1px; height:2px; width:0; background:var(--grad3); box-shadow:0 0 10px var(--purple)}
+  /* ---- Explore button / view ---- */
+  .xbtn{display:inline-flex; align-items:center; gap:7px; border:1px solid rgba(139,123,255,.35);
+    background:rgba(139,123,255,.12); color:var(--white); font-size:12px; font-weight:800; letter-spacing:.02em;
+    padding:8px 15px; border-radius:999px; cursor:pointer; transition:.15s; white-space:nowrap}
+  .xbtn:hover{border-color:var(--purple); background:rgba(139,123,255,.2)}
+  .xbtn .xar{color:var(--purple); font-size:12px}
+  .xbtn.ghost{background:transparent; border-color:var(--panel-brd); color:var(--muted)}
+  .xbtn.ghost:hover{color:var(--white); border-color:var(--muted)}
+  .xbtn.save{border-color:rgba(53,224,208,.4); background:rgba(53,224,208,.12)}
+  .xbtn.save:hover{border-color:var(--teal); background:rgba(53,224,208,.2)}
+  #explore{display:none}
+  body.exploring .story{display:none}
+  body.exploring #explore{display:block}
+  body.exploring .dotnav{display:none}
+  body.exploring #btnExplore{display:none}
+  body.exploring #prog{display:none}
+  .ex-top{display:flex; align-items:center; gap:18px; padding:36px 0 6px}
+  .ex-title{font-size:26px; font-weight:800; letter-spacing:-.02em}
+  #explore .fbar{position:relative; margin-top:14px; padding:16px 0 0}
+  .ex-slice{color:var(--muted); font-size:12px; font-weight:700; letter-spacing:.02em}
+  .ex-slice b{color:var(--white)}
+  .ex-note{margin-top:12px; color:var(--amber); font-size:12px; font-weight:600; letter-spacing:.01em; display:none}
+  #explore.demo .ex-note{display:block}
+  .ex-win{color:var(--dim); font-weight:700; letter-spacing:.1em; margin-left:6px}
+  .ex-grid{display:grid; grid-template-columns:1fr 1fr; gap:22px; margin:26px 0 90px}
+  .ex-card{background:var(--panel); border:1px solid var(--panel-brd); border-radius:20px; padding:22px 26px}
+  .ex-card.wide{grid-column:1 / -1}
+  .ex-lab{color:var(--muted); font-size:11px; font-weight:800; letter-spacing:.18em; margin-bottom:14px}
+  #exTrend{width:100%; height:300px; display:block}
+  .ex-rail-row{margin:12px 0}
+  .ex-rail-row .rr-top{display:flex; justify-content:space-between; align-items:baseline; font-size:13px; margin-bottom:5px}
+  .ex-rail-row .rr-nm{color:#cdd4f5; font-weight:600}
+  .ex-rail-row .rr-val{font-weight:800}
+  .ex-rail-bar{height:9px; border-radius:999px; background:rgba(255,255,255,.06); overflow:hidden; position:relative}
+  .ex-rail-bar .rr-fill{height:100%; border-radius:999px; background:var(--grad); width:0; transition:width .8s cubic-bezier(.2,.7,.2,1)}
+  .ex-rail-bar .rr-mark{position:absolute; top:-3px; width:2px; height:15px; background:rgba(245,247,255,.7)}
+  .ex-empty{color:var(--dim); font-size:14px; padding:30px 0; text-align:center}
+  .toast{position:fixed; left:50%; top:40px; transform:translateX(-50%) translateY(-20px);
+    background:#0b0e1c; border:1px solid rgba(53,224,208,.5); color:var(--teal); font-weight:800; font-size:14px;
+    padding:13px 24px; border-radius:999px; box-shadow:0 14px 40px rgba(0,0,0,.6); opacity:0; pointer-events:none;
+    transition:.3s; z-index:60}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+
+  /* ---------- hero ---------- */
+  .hero{min-height:92vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:80px 0}
+  .hero .eyebrow{color:var(--teal); font-size:13px; font-weight:800; letter-spacing:.34em; margin-bottom:30px}
+  .hero h1{font-size:82px; line-height:1.02; font-weight:800; letter-spacing:-.02em; max-width:1100px}
+  .hero h1 .hot{background:var(--grad3); -webkit-background-clip:text; background-clip:text; color:transparent}
+  .hero p{margin-top:34px; max-width:720px; color:var(--muted); font-size:19px; line-height:1.6}
+  .hero p b{color:var(--white); font-weight:600}
+  .prepared{margin-top:52px; display:flex; align-items:center; gap:14px; padding:14px 22px 14px 14px;
+    background:var(--panel); border:1px solid var(--panel-brd); border-radius:16px}
+  .prepared .av{width:44px;height:44px;border-radius:50%; background:var(--grad); display:grid; place-items:center; font-weight:800; color:#0a0c1a}
+  .prepared .who{text-align:left}
+  .prepared .who .k{font-size:10px; letter-spacing:.24em; color:var(--dim); font-weight:700}
+  .prepared .who .n{font-size:16px; font-weight:800}
+  .prepared .who .t{font-size:12px; color:var(--muted)}
+  .scrollcue{margin-top:60px; color:var(--dim); font-size:12px; letter-spacing:.24em; font-weight:700; animation:bob 2s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0);opacity:.6}50%{transform:translateY(6px);opacity:1}}
+
+  /* ---------- chapters ---------- */
+  .chapter{padding:96px 0; border-top:1px solid rgba(140,150,200,.07)}
+  .chead{display:flex; align-items:flex-start; gap:26px; margin-bottom:44px}
+  .chead .num{font-size:64px; font-weight:800; line-height:.8; letter-spacing:-.04em;
+    background:var(--grad); -webkit-background-clip:text; background-clip:text; color:transparent; flex:none; width:120px}
+  .chead .kick{color:var(--muted); font-size:12px; font-weight:800; letter-spacing:.24em}
+  .chead h2{font-size:40px; font-weight:800; letter-spacing:-.02em; margin-top:8px; line-height:1.08; max-width:900px}
+  .chead .subh{margin-top:12px; color:var(--dim); font-size:15px; font-weight:600; letter-spacing:.02em}
+  .cbody{display:grid; grid-template-columns:1fr 420px; gap:48px; align-items:start}
+  .cbody.wide{grid-template-columns:1fr}
+  .stage-card{position:relative; background:var(--panel); border:1px solid var(--panel-brd); border-radius:22px; padding:26px 30px; min-height:340px}
+  .stage-card .lab{color:var(--muted); font-size:11px; font-weight:700; letter-spacing:.18em; margin-bottom:6px}
+  .narr{color:#cdd4f5; font-size:16px; line-height:1.66}
+  .narr .lead{font-size:20px; color:var(--white); font-weight:700; line-height:1.4; margin-bottom:18px; letter-spacing:-.01em}
+  .narr b{color:var(--white); font-weight:700}
+  .annos{margin-top:26px; display:flex; flex-direction:column; gap:14px}
+  .anno{display:flex; gap:14px; align-items:flex-start; padding:14px 16px; border-radius:14px; background:rgba(255,255,255,.025); border:1px solid var(--panel-brd)}
+  .anno .idx{width:26px;height:26px;border-radius:8px; flex:none; display:grid; place-items:center; font-size:12px; font-weight:800; color:#0a0c1a; background:var(--grad)}
+  .anno .txt{font-size:13.5px; line-height:1.45}
+  .anno .txt .big{font-size:20px; font-weight:800; letter-spacing:-.02em; display:block}
+  .anno .txt .cap{color:var(--muted); font-size:12px}
+  .action{display:flex; gap:16px; align-items:center; padding:18px 20px; border-radius:16px; margin-bottom:12px;
+    background:linear-gradient(90deg,rgba(139,123,255,.10),rgba(255,255,255,.02)); border:1px solid rgba(139,123,255,.22)}
+  .action .n{width:34px;height:34px;border-radius:10px;flex:none;display:grid;place-items:center;font-weight:800;color:#0a0c1a;background:var(--grad)}
+  .action .t{font-size:15.5px; line-height:1.4}
+  .action .t b{font-weight:800}
+
+  /* kpi scorecard grid */
+  .kpis{display:grid; grid-template-columns:repeat(3,1fr); gap:16px}
+  .kpi{position:relative; padding:18px 20px 14px; border-radius:16px; background:rgba(255,255,255,.028); border:1px solid var(--panel-brd); overflow:hidden}
+  .kpi .lab{font-size:10px; letter-spacing:.16em; color:var(--muted); font-weight:700; padding-right:56px}
+  .kpi .val{font-size:38px; font-weight:800; letter-spacing:-.03em; margin-top:4px}
+  .kpi .val .u{font-size:17px; color:var(--muted); font-weight:700; margin-left:1px}
+  .kpi .delta{position:absolute; top:18px; right:20px; font-size:12px; font-weight:800}
+  .kpi .spark{margin-top:6px; height:34px; width:100%; display:block}
+  .up{color:var(--teal)} .down{color:var(--red)} .watch{color:var(--amber)}
+
+  /* gauge */
+  .gauge-flex{display:flex; align-items:center; gap:40px; flex-wrap:wrap}
+  .gauge-wrap{position:relative; width:360px; height:238px; flex:none}
+  .gauge-wrap #gauge{position:relative; z-index:2}          /* arc + needle paint ON TOP of the BAN */
+  .gauge-num{position:absolute; left:0; right:0; top:104px; text-align:center; z-index:1}
+  .gauge-num .v{font-size:70px; font-weight:800; letter-spacing:-.03em; line-height:1}
+  .gauge-num .u{font-size:28px; font-weight:700; color:var(--muted)}
+  .gauge-wrap .sub2{position:absolute; left:0; right:0; bottom:4px; text-align:center; z-index:3; font-size:11px; color:var(--dim); letter-spacing:.16em; font-weight:700}
+
+  /* ranked scoreboard */
+  .score{padding:16px 4px; border-bottom:1px solid rgba(140,150,200,.09); position:relative; transition:transform .25s ease}
+  .score:hover{transform:translateX(5px)}
+  .score .row1{display:flex; justify-content:space-between; align-items:baseline}
+  .score .nm{font-size:18px; font-weight:700}
+  .score .rt{display:flex; align-items:baseline; gap:10px}
+  .score .big{font-size:42px; font-weight:800; letter-spacing:-.03em; line-height:.9}
+  .score .d{font-size:13px; font-weight:800}
+  .score .bar{position:relative; height:7px; border-radius:4px; background:rgba(140,150,200,.14); margin-top:12px}
+  .score .fill{position:absolute; left:0; top:0; height:100%; border-radius:4px; background:var(--grad); width:0; transition:width 1.1s cubic-bezier(.2,.7,.2,1)}
+  .score .mark{position:absolute; top:-3px; width:2px; height:13px; background:var(--white); opacity:.5; border-radius:2px}
+  .score .cap{margin-top:9px; font-size:12px; color:var(--dim)}
+  .score .cap b{color:var(--muted); font-weight:700}
+
+  /* dual cost bars */
+  .costgrid{display:grid; grid-template-columns:1fr 1fr; gap:30px}
+  .costcell .lab{color:var(--muted); font-size:11px; font-weight:700; letter-spacing:.16em}
+  .costcell .big{font-size:52px; font-weight:800; letter-spacing:-.03em; margin-top:6px}
+  .costcell .big .u{font-size:22px; color:var(--muted); margin-left:2px}
+  .costcell .delta{font-size:14px; font-weight:800; margin-top:2px}
+
+  #trend, #costspark1, #costspark2{width:100%; display:block}
+  .axis text{fill:var(--dim); font-size:11px}
+  .axis path,.axis line{stroke:rgba(140,150,200,.12)}
+
+  /* reveal on scroll */
+  .reveal{opacity:0; transform:translateY(34px); transition:opacity .8s cubic-bezier(.2,.7,.2,1), transform .8s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1; transform:none}
+  .reveal.d1{transition-delay:.08s} .reveal.d2{transition-delay:.16s} .reveal.d3{transition-delay:.24s}
+
+  /* ---------- interactivity: filters, popover, modal, crosshair ---------- */
+  .filters{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:2px}
+  .chip{border:1px solid var(--panel-brd); background:rgba(255,255,255,.04); color:var(--muted);
+    font-size:12px; font-weight:700; letter-spacing:.02em; padding:7px 14px; border-radius:999px; cursor:pointer; transition:all .18s ease}
+  .chip:hover{color:var(--white); border-color:rgba(139,123,255,.5)}
+  .chip.on{background:var(--grad); color:#0a0c1a; border-color:transparent}
+  .readout{margin:12px 2px 8px; font-size:12.5px; color:var(--dim); font-weight:600}
+  .readout b{color:var(--muted); font-weight:800}
+  .hint{font-size:11px; color:var(--dim); letter-spacing:.03em; margin-top:12px}
+  .score{cursor:pointer}
+  .score .go{position:absolute; right:0; top:20px; color:var(--dim); font-size:15px; opacity:0; transition:opacity .2s}
+  .score:hover .go{opacity:1; color:var(--purple)}
+
+  /* KPI info badge + popover */
+  .kpi .info{position:absolute; left:14px; bottom:11px; width:18px;height:18px;border-radius:50%;
+    display:grid;place-items:center;font-size:11px;font-weight:800;cursor:pointer; font-style:italic;
+    color:var(--muted); border:1px solid var(--panel-brd); background:rgba(255,255,255,.05); z-index:2}
+  .kpi .info:hover{color:var(--white); border-color:var(--purple)}
+  .popover{position:fixed; z-index:60; width:300px; padding:18px; border-radius:16px;
+    background:rgba(12,14,28,.97); border:1px solid rgba(139,123,255,.35); box-shadow:0 20px 60px rgba(0,0,0,.6);
+    backdrop-filter:blur(8px); opacity:0; transform:translateY(6px); pointer-events:none; transition:opacity .18s, transform .18s}
+  .popover.show{opacity:1; transform:none; pointer-events:auto}
+  .popover h4{font-size:12px; letter-spacing:.14em; color:var(--purple); font-weight:800}
+  .popover .m{margin-top:8px; font-size:13px; color:#cdd4f5; line-height:1.55}
+  .popover .lbl{display:block; margin-top:13px; font-size:10px; letter-spacing:.16em; color:var(--dim); font-weight:800}
+
+  /* facility modal */
+  .modal-back{position:fixed; inset:0; z-index:80; background:rgba(4,5,11,.66); backdrop-filter:blur(6px);
+    display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity .22s}
+  .modal-back.show{opacity:1; pointer-events:auto}
+  .modal{width:560px; max-width:92vw; background:linear-gradient(180deg,#0c0f20,#080a16);
+    border:1px solid rgba(139,123,255,.3); border-radius:22px; padding:30px 32px 28px; position:relative;
+    transform:translateY(18px) scale(.98); transition:transform .28s cubic-bezier(.2,.8,.3,1)}
+  .modal-back.show .modal{transform:none}
+  .modal .x{position:absolute; top:18px; right:20px; width:30px;height:30px;border-radius:50%; border:1px solid var(--panel-brd);
+    background:rgba(255,255,255,.04); color:var(--muted); cursor:pointer; font-size:13px; line-height:1}
+  .modal .x:hover{color:var(--white)}
+  .modal .region{font-size:11px; letter-spacing:.2em; font-weight:800; color:var(--teal)}
+  .modal h3{font-size:26px; font-weight:800; margin-top:6px; letter-spacing:-.02em}
+  .modal .figs{display:flex; align-items:baseline; gap:14px; margin-top:16px}
+  .modal .figs .big{font-size:56px; font-weight:800; letter-spacing:-.03em; line-height:.9}
+  .modal .figs .u{font-size:24px; color:var(--muted); font-weight:700}
+  .modal .figs .d{font-size:14px; font-weight:800}
+  .modal .status{display:inline-block; margin-top:14px; padding:5px 12px; border-radius:999px; font-size:11px; font-weight:800; letter-spacing:.08em}
+  .status.hot{background:rgba(242,95,208,.15); color:var(--magenta); border:1px solid rgba(242,95,208,.4)}
+  .status.watch{background:rgba(245,178,75,.14); color:var(--amber); border:1px solid rgba(245,178,75,.4)}
+  .status.ok{background:rgba(90,224,160,.14); color:var(--green); border:1px solid rgba(90,224,160,.4)}
+  .modal .mlab{margin-top:20px; font-size:10px; letter-spacing:.16em; color:var(--dim); font-weight:800}
+  .modal #mtrend{width:100%; height:110px; display:block; margin-top:8px}
+  .modal .pill-action{margin-top:20px; padding:14px 16px; border-radius:14px;
+    background:linear-gradient(90deg,rgba(139,123,255,.12),rgba(255,255,255,.02)); border:1px solid rgba(139,123,255,.28)}
+  .modal .pill-action .k{font-size:10px;letter-spacing:.16em;color:var(--purple);font-weight:800}
+  .modal .pill-action .v{font-size:14px; margin-top:4px; line-height:1.45}
+
+  /* trend crosshair tooltip */
+  #ttip{position:fixed; z-index:50; pointer-events:none; opacity:0; transition:opacity .12s;
+    background:rgba(12,14,28,.96); border:1px solid rgba(139,123,255,.4); border-radius:10px; padding:8px 12px;
+    box-shadow:0 10px 30px rgba(0,0,0,.5)}
+  #ttip .dd{color:var(--dim); font-size:10px; letter-spacing:.1em; font-weight:700}
+  #ttip .vv{font-size:18px; font-weight:800; color:var(--teal)}
+
+  /* sticky chapter dot-nav */
+  .dotnav{position:fixed; right:26px; top:50%; transform:translateY(-50%); z-index:40; display:flex; flex-direction:column; gap:15px}
+  .dotnav a{position:relative; width:11px; height:11px; border-radius:50%; border:1.5px solid rgba(154,166,214,.4);
+    background:transparent; transition:transform .25s, box-shadow .25s, background .25s, border-color .25s; cursor:pointer}
+  .dotnav a:hover{border-color:var(--purple)}
+  .dotnav a.on{background:var(--grad); border-color:transparent; box-shadow:0 0 12px rgba(139,123,255,.75); transform:scale(1.35)}
+  .dotnav a .tip{position:absolute; right:24px; top:50%; transform:translateY(-50%); white-space:nowrap;
+    font-size:11px; font-weight:700; letter-spacing:.04em; color:var(--muted); background:rgba(12,14,28,.96);
+    border:1px solid var(--panel-brd); padding:5px 11px; border-radius:8px; opacity:0; pointer-events:none; transition:opacity .2s}
+  .dotnav a:hover .tip{opacity:1}
+  @media (max-width:1100px){ .dotnav{display:none} }
+
+  /* expandable narrative */
+  .more{max-height:0; overflow:hidden; opacity:0; transition:max-height .55s cubic-bezier(.2,.7,.2,1), opacity .4s ease}
+  .more.open{max-height:560px; opacity:1; margin-top:16px}
+  .more .lead2{font-size:16px; color:var(--white); font-weight:700; margin-bottom:8px; letter-spacing:-.01em}
+  .readmore{margin-top:18px; display:inline-flex; align-items:center; gap:7px; cursor:pointer;
+    background:rgba(139,123,255,.08); border:1px solid rgba(139,123,255,.28); color:var(--purple);
+    font-weight:800; font-size:12px; letter-spacing:.06em; padding:8px 15px; border-radius:999px; transition:all .2s}
+  .readmore:hover{background:rgba(139,123,255,.16); color:var(--white)}
+  .readmore .ar{transition:transform .32s cubic-bezier(.2,.7,.2,1)}
+  .readmore.open .ar{transform:rotate(180deg)}
+
+  /* correlation scatter */
+  #scatter{width:100%; display:block}
+  .scatter-dot{transition:r .2s}
+  .sc-fit{stroke:rgba(242,95,208,.5); stroke-width:2; stroke-dasharray:6 5}
+
+  /* closing */
+  .closing{padding:120px 0 140px; text-align:center}
+  .closing .eyebrow{color:var(--teal); font-size:12px; font-weight:800; letter-spacing:.3em}
+  .closing h2{font-size:46px; font-weight:800; letter-spacing:-.02em; margin-top:20px; max-width:900px; margin-inline:auto; line-height:1.1}
+  .closing .three{display:grid; grid-template-columns:repeat(3,1fr); gap:22px; margin-top:56px; text-align:left}
+  .closing .three .c{padding:26px; border-radius:18px; background:var(--panel); border:1px solid var(--panel-brd)}
+  .closing .three .c .n{font-size:13px; font-weight:800; color:var(--purple)}
+  .closing .three .c h3{font-size:18px; font-weight:800; margin-top:10px; line-height:1.3}
+  .closing .three .c p{font-size:14px; color:var(--muted); line-height:1.6; margin-top:10px}
+  .backtop{margin-top:64px; color:var(--dim); font-size:13px; letter-spacing:.16em; font-weight:700; text-decoration:none; display:inline-block}
+</style>
+</head>
+<body id="top">
+
+<div class="topbar">
+  <div class="wrap">
+    <div class="brand"><span class="dot"></span> Running Hot · Daily Brief · FQ3</div>
+    <div class="toggle"><button data-mode="demo">Demo</button><button class="on" data-mode="live">Live</button></div>
+    <span class="pill">Trusted · Tableau Pulse</span>
+    <div class="spacer"></div>
+    <span style="color:var(--dim); font-size:12px; letter-spacing:.14em" id="asof">6 FACILITIES · PREVIOUS 90 DAYS</span>
+    <button class="xbtn" id="btnExplore" type="button">Explore data <span class="xar">↗</span></button>
+    <div class="prog" id="prog"></div>
+  </div>
+</div>
+
+<div class="wrap story">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="eyebrow reveal">SCROLL TO EXPLORE</div>
+    <h1 class="serif reveal d1">Running <span class="hot">Hot</span>.<br/>Capacity vs. the cost of service.</h1>
+    <p class="reveal d2">Every facility in the network is running <b>over its 65% design target</b>. Service quality is holding — for now. This brief follows the strain as it moves downstream, live from the Pulse datasource.</p>
+    <div class="prepared reveal d3">
+      <div class="av">JP</div>
+      <div class="who"><div class="k">PREPARED FOR</div><div class="n">Jack &ldquo;Pallet&rdquo; Palmer</div><div class="t">COO, Warehouse Ops</div></div>
+    </div>
+    <div class="scrollcue reveal d3">↓ SCROLL</div>
+  </section>
+
+  <!-- 01 EXEC SUMMARY -->
+  <section class="chapter" data-ch id="ch1">
+    <div class="chead reveal">
+      <div class="num">01</div>
+      <div>
+        <div class="kick">EXECUTIVE SUMMARY</div>
+        <h2>The network is over target on every metric that measures load.</h2>
+        <div class="subh">6 operating signals · <span data-v="util">67.2</span>% network utilization · <span class="win">previous 90 days</span></div>
+      </div>
+    </div>
+    <div class="cbody">
+      <div class="stage-card reveal d1"><div class="kpis" id="kpis"></div></div>
+      <div class="narr reveal d2">
+        <div class="lead">Utilization sits at <span data-v="util">67.2</span>% — <span data-v="utilDiff">2.2</span> points <span data-v="utilOver">above</span> the <span data-v="target">65</span>% design target, and climbing.</div>
+        Service metrics are still excellent: on-time shipping and pick accuracy both hold above 99%. But the two cost signals — <b>dock-to-stock hours</b> and <b>labor hours per load</b> — have both turned upward, the first sign that running this hot is starting to cost something.
+        <div class="more" id="more1">
+          <div class="lead2">The story of this brief is the gap between two truths.</div>
+          Service held — but the price of holding it is rising. What follows traces that price across the network: where the load concentrates, what it's already costing downstream, and how much runway is left before any of it reaches the customer.
+        </div>
+        <button class="readmore" data-more="more1">Read more <span class="ar">↓</span></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 UTILIZATION -->
+  <section class="chapter" data-ch id="ch2">
+    <div class="chead reveal">
+      <div class="num">02</div>
+      <div>
+        <div class="kick">WAREHOUSE UTILIZATION</div>
+        <h2><span data-v="util">67.2</span>% against a <span data-v="target">65</span>% design target.</h2>
+        <div class="subh">network average · <span class="win">previous 90 days</span> · target marker at 65%</div>
+      </div>
+    </div>
+    <div class="cbody">
+      <div class="stage-card reveal d1">
+        <div class="gauge-flex">
+          <div class="gauge-wrap">
+            <svg id="gauge" viewBox="0 0 360 224"></svg>
+            <div class="gauge-num"><span class="v" id="gv">0</span><span class="u">%</span></div>
+            <div class="sub2" id="gsub">TARGET 65%</div>
+          </div>
+          <div style="flex:1; min-width:240px">
+            <div class="narr">Design capacity is the point past which every extra load competes for the same doors, racks, and people. At <b><span data-v="util">67.2</span>%</b>, the network is drawing down the buffer that absorbs demand spikes and staffing gaps.</div>
+          </div>
+        </div>
+      </div>
+      <div class="narr reveal d2">
+        <div class="lead">Above target isn't failure — it's efficiency with no slack left.</div>
+        The 65% line is where planners expect to run: full enough to be efficient, empty enough to absorb a bad day. Running <span data-v="utilDiff">2.2</span> points over the line network-wide means the whole system is trading its shock absorber for throughput. The question the rest of this brief answers: <b>where</b> is it worst, and <b>what</b> is it already costing.
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 WHERE THE PRESSURE IS -->
+  <section class="chapter" data-ch id="ch3">
+    <div class="chead reveal">
+      <div class="num">03</div>
+      <div>
+        <div class="kick">WHERE THE PRESSURE IS</div>
+        <h2>Every facility is over the line — the <span data-v="topRegion">Midwest</span> most of all.</h2>
+        <div class="subh">utilization by facility · <span class="win">previous 90 days</span> · white tick = last period</div>
+      </div>
+    </div>
+    <div class="cbody">
+      <div class="stage-card reveal d1">
+        <div class="filters" id="regionChips"></div>
+        <div class="readout" id="railReadout"></div>
+        <div id="rail"></div>
+        <div class="hint">↳ Click any facility for a 30-day detail and recommended action.</div>
+      </div>
+      <div class="narr reveal d2">
+        <div class="lead"><span data-v="f0short">DC Prime</span> and <span data-v="f1short">Crossdock North</span> — <span data-v="topPairRegion">both Midwest</span> — lead the network.</div>
+        The pressure isn't evenly spread. The two <span data-v="topRegion">Midwest</span> sites lead the network and have climbed the fastest since last period (the white tick shows where each one sat). That concentration is useful: it means relief doesn't require re-planning the whole network — it means finding overflow capacity for two specific buildings.
+        <div class="annos">
+          <div class="anno"><div class="idx">1</div><div class="txt"><span class="big"><span data-v="f0val">71.2</span>%</span><span class="cap"><span data-v="f0name">DC Prime — Midwest</span> · <span data-v="f0delta">+3.1</span> vs last period</span></div></div>
+          <div class="anno"><div class="idx">2</div><div class="txt"><span class="big"><span data-v="f1val">70.6</span>%</span><span class="cap"><span data-v="f1name">Crossdock North — Midwest</span> · <span data-v="f1delta">+2.7</span></span></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 COST OF SERVICE -->
+  <section class="chapter" data-ch id="ch4">
+    <div class="chead reveal">
+      <div class="num">04</div>
+      <div>
+        <div class="kick">THE COST OF SERVICE</div>
+        <h2>The strain is already showing up downstream.</h2>
+        <div class="subh">dock-to-stock hours &amp; labor hours per load · both rising</div>
+      </div>
+    </div>
+    <div class="cbody wide">
+      <div class="stage-card reveal d1">
+        <div class="lab">UTILIZATION vs. DOCK-TO-STOCK · BY FACILITY</div>
+        <svg id="scatter" style="height:300px"></svg>
+        <div class="hint" style="margin-top:2px">↳ Each dot is a facility. The fitted line shows put-away time rising with load — the hotter the building, the slower it clears.</div>
+        <div class="costgrid" style="margin-top:30px">
+          <div class="costcell">
+            <div class="lab">DOCK-TO-STOCK HOURS</div>
+            <div class="big" style="color:var(--amber)"><span id="cd1">0</span><span class="u">h</span></div>
+            <div class="delta watch"><span data-v="dockDelta">▲ +0.6</span> vs prior 30 days</div>
+            <svg id="costspark1" viewBox="0 0 520 90" preserveAspectRatio="none" style="height:90px;margin-top:10px"></svg>
+          </div>
+          <div class="costcell">
+            <div class="lab">LABOR HOURS PER LOAD</div>
+            <div class="big" style="color:var(--amber)"><span id="cd2">0</span></div>
+            <div class="delta watch"><span data-v="laborDelta">▲ +0.08</span> vs prior 30 days</div>
+            <svg id="costspark2" viewBox="0 0 520 90" preserveAspectRatio="none" style="height:90px;margin-top:10px"></svg>
+          </div>
+        </div>
+        <div class="narr" style="margin-top:22px">
+          <div class="lead">These are the receipts for running hot.</div>
+          When a building is too full, inbound trailers wait longer to be put away (<b>dock-to-stock</b> climbs) and every load takes more people to move (<b>labor per load</b> climbs). Both have turned up in the last 30 days.
+          <div class="more" id="more4">
+            <div class="lead2">The scatter is the proof the trend lines only imply.</div>
+            Plotted against utilization, the facilities line up along a clear upward slope: past target, every extra point of load buys measurably slower put-away. Neither cost signal has reached the customer yet — but they are the leading indicators that will, if utilization keeps climbing. That's what makes them worth acting on <b>now</b>, while they're still just hours on a chart.
+          </div>
+          <button class="readmore" data-more="more4">Read more <span class="ar">↓</span></button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 TREND -->
+  <section class="chapter" data-ch id="ch5">
+    <div class="chead reveal">
+      <div class="num">05</div>
+      <div>
+        <div class="kick">THE 90-DAY TREND</div>
+        <h2>Flat near target for two months — then a sharp climb.</h2>
+        <div class="subh">network utilization · 7-day moving average · <span class="win">previous 90 days</span></div>
+      </div>
+    </div>
+    <div class="cbody wide">
+      <div class="stage-card reveal d1" style="min-height:420px">
+        <div class="lab">NETWORK UTILIZATION · 7-DAY AVG</div>
+        <svg id="trend" style="height:360px"></svg>
+      </div>
+    </div>
+    <div class="narr reveal d2" style="margin-top:26px; max-width:900px">
+      <div class="lead">The last quarter is where the pattern breaks.</div>
+      For roughly two months the network wavered right around the 65% target — normal, healthy operation. The recent, sustained climb toward <span data-v="trendPeak">71</span>% is what turns this from a steady-state readout into a brief that needs action.
+      <div class="more" id="more5">
+        <div class="lead2">The trend, not the level, is the signal.</div>
+        A single day at <span data-v="trendPeak">71</span>% is noise; three straight weeks of climb is a direction. Hover any point on the line to read that day's network average — the shape is what matters, and the shape has turned. Left alone, the same slope carries the network into peak season already over its buffer.
+      </div>
+      <button class="readmore" data-more="more5">Read more <span class="ar">↓</span></button>
+    </div>
+  </section>
+
+  <!-- 06 SERVICE HELD -->
+  <section class="chapter" data-ch id="ch6">
+    <div class="chead reveal">
+      <div class="num">06</div>
+      <div>
+        <div class="kick">SERVICE STILL HELD</div>
+        <h2>The customer hasn't felt it yet — that's the window.</h2>
+        <div class="subh">on-time shipping &amp; pick accuracy · both above 99%</div>
+      </div>
+    </div>
+    <div class="cbody">
+      <div class="stage-card reveal d1">
+        <div class="kpis" id="kpis2" style="grid-template-columns:1fr 1fr"></div>
+      </div>
+      <div class="narr reveal d2">
+        <div class="lead">Both service metrics are still up, and above 99%.</div>
+        This is the counter-trend that makes the story urgent rather than alarming: the network is absorbing the strain internally, protecting the customer experience.
+        <div class="more" id="more6">
+          <div class="lead2">Absorbing strain isn't the same as having none.</div>
+          On-time shipping and pick accuracy are both still improving — but they're being held up by the same people and doors that the rising cost signals say are stretched. That buffer is finite. Acting now spends slack the network still has; waiting spends goodwill it would have to win back. Now is the moment to <b>relieve the pressure while service is still a strength</b>, not after it becomes a complaint.
+        </div>
+        <button class="readmore" data-more="more6">Read more <span class="ar">↓</span></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 07 ACTIONS -->
+  <section class="chapter" data-ch id="ch7">
+    <div class="chead reveal">
+      <div class="num">07</div>
+      <div>
+        <div class="kick">RECOMMENDED ACTIONS</div>
+        <h2>Relieve the <span data-v="topRegion">Midwest</span>, protect the trend.</h2>
+        <div class="subh">3 execution moves for the week ahead</div>
+      </div>
+    </div>
+    <div class="cbody wide">
+      <div class="reveal d1">
+        <div class="action"><div class="n">1</div><div class="t"><b>Open overflow capacity for <span data-v="f0short">DC Prime</span> &amp; <span data-v="f1short">Crossdock North</span>.</b> Both <span data-v="topRegion">Midwest</span> sites lead the network on utilization. Route ~10% of inbound to a partner cross-dock this month to pull them back under target before peak.</div></div>
+        <div class="action"><div class="n">2</div><div class="t"><b>Staff to the dock-to-stock leading indicator, not the backlog.</b> Add put-away labor at the two hottest sites now — while the metric is drifting, before it spikes.</div></div>
+        <div class="action"><div class="n">3</div><div class="t"><b>Set a weekly utilization-vs-target checkpoint.</b> Watch the 7-day trend, not the daily number. The goal is to bend the climb back toward <span data-v="target">65</span>% while on-time and accuracy are still strengths.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CLOSING -->
+  <section class="closing" data-ch id="close">
+    <div class="eyebrow reveal">WHAT THIS BRIEF MADE POSSIBLE</div>
+    <h2 class="serif reveal d1">One read of the network — before the customer ever feels it.</h2>
+    <div class="three">
+      <div class="c reveal d1"><div class="n">1</div><h3>Strain, seen upstream</h3><p>Utilization crossed target quietly. Reading it against dock-to-stock and labor per load turns a capacity number into an early warning the customer never had to trigger.</p></div>
+      <div class="c reveal d2"><div class="n">2</div><h3>Concentration, named</h3><p>The pressure isn't network-wide — it's two <span data-v="topRegion">Midwest</span> buildings. That makes the fix a routing decision, not a re-plan.</p></div>
+      <div class="c reveal d3"><div class="n">3</div><h3>A window, not an alarm</h3><p>Service still leads. Acting now spends slack we still have, instead of goodwill we'd have to win back.</p></div>
+    </div>
+    <a class="backtop reveal" href="#top">BACK TO TOP ↑</a>
+  </section>
+
+</div>
+
+<!-- ===================== EXPLORE VIEW (filters live here; story stays unfiltered) ===================== -->
+<div id="explore">
+  <div class="wrap">
+    <div class="ex-top">
+      <button class="xbtn ghost" id="btnBackStory" type="button"><span class="xar">←</span> Back to story</button>
+      <div class="ex-title">Explore the network</div>
+      <div class="spacer"></div>
+      <button class="xbtn save" id="btnSave" type="button">Save view</button>
+    </div>
+
+    <div class="fbar" id="fbar">
+      <div class="grp"><span class="glab">WINDOW</span>
+        <div class="seg" id="fWindow">
+          <button data-days="30">30d</button><button data-days="60">60d</button><button class="on" data-days="90">90d</button><button data-days="180">180d</button>
+        </div>
+      </div>
+      <div class="grp"><span class="glab">REGION</span>
+        <div class="fdd" id="ddRegions"><button class="fdd-btn" type="button">All <span class="car">▾</span></button><div class="fdd-panel"></div></div>
+      </div>
+      <div class="grp"><span class="glab">FACILITY</span>
+        <div class="fdd" id="ddFacilities"><button class="fdd-btn" type="button">All <span class="car">▾</span></button><div class="fdd-panel"></div></div>
+      </div>
+      <div class="spacer"></div>
+      <span class="ex-slice" id="exSlice"></span>
+    </div>
+    <div class="ex-note" id="exNote">Filters act on live feeder data. Switch the top toggle to <b>Live</b> to slice.</div>
+
+    <div class="ex-grid">
+      <div class="ex-card wide">
+        <div class="ex-lab">OPERATING SIGNALS · SELECTED SLICE</div>
+        <div class="kpis" id="exKpis"></div>
+      </div>
+      <div class="ex-card">
+        <div class="ex-lab">NETWORK UTILIZATION · 7-DAY AVG <span class="ex-win" id="exWinLab"></span></div>
+        <svg id="exTrend" viewBox="0 0 1000 300" preserveAspectRatio="none"></svg>
+      </div>
+      <div class="ex-card">
+        <div class="ex-lab">UTILIZATION BY FACILITY</div>
+        <div id="exRail"></div>
+      </div>
+    </div>
+  </div>
+  <div class="toast" id="toast">View saved ✓</div>
+</div>
+
+<!-- facility detail modal -->
+<div class="modal-back" id="facModal">
+  <div class="modal">
+    <button class="x" id="facClose">✕</button>
+    <div class="region" id="mRegion"></div>
+    <h3 id="mName"></h3>
+    <div class="figs"><div class="big" id="mVal">0</div><div class="u">%</div><div class="d" id="mDelta"></div></div>
+    <div><span class="status" id="mStatus"></span></div>
+    <div class="mlab">UTILIZATION · LAST 30 DAYS · target line at 65%</div>
+    <svg id="mtrend" viewBox="0 0 496 110" preserveAspectRatio="none"></svg>
+    <div class="pill-action"><div class="k">RECOMMENDED ACTION</div><div class="v" id="mAction"></div></div>
+  </div>
+</div>
+
+<!-- KPI info popover -->
+<div class="popover" id="pop">
+  <h4 id="popTitle"></h4>
+  <div class="m" id="popMeasures"></div>
+  <span class="lbl">WHY IT MATTERS</span>
+  <div class="m" id="popWhy"></div>
+</div>
+
+<!-- trend crosshair tooltip -->
+<div id="ttip"><div class="dd" id="ttD"></div><div class="vv" id="ttV"></div></div>
+
+<script>
+// ---------- seed data (same contract as index.html) ----------
+const SEED = {
+  asof: "Sep 11, 2026",
+  utilization:{ value:67.18, target:65, min:50, max:80 },
+  peak:{ value:71.2, facility:"DC Prime — Midwest" },
+  kpis:[
+    {key:"ontime",  lab:"ON-TIME SHIPPING", value:99.38, unit:"%",  fmt:2, dir:"up",   delta:"+0.4", good:true,  color:"var(--teal)"},
+    {key:"accuracy",lab:"PICK ACCURACY",     value:99.53, unit:"%",  fmt:2, dir:"up",   delta:"+0.2", good:true,  color:"var(--teal)"},
+    {key:"load",    lab:"LOAD VOLUME / DAY",  value:27.87, unit:"",   fmt:2, dir:"up",   delta:"+6%",  good:true,  color:"var(--white)"},
+    {key:"dock",    lab:"DOCK-TO-STOCK HRS",  value:5.53,  unit:"h",  fmt:2, dir:"up",   delta:"+0.6", good:false, color:"var(--amber)"},
+    {key:"labor",   lab:"LABOR HRS / LOAD",   value:1.156, unit:"",   fmt:3, dir:"up",   delta:"+0.08",good:false, color:"var(--amber)"},
+    {key:"util",    lab:"WAREHOUSE UTIL",     value:67.18, unit:"%",  fmt:1, dir:"up",   delta:"+3.1", good:false, color:"var(--gold)"},
+  ],
+  facilities:[
+    {name:"DC Prime — Midwest",       value:71.2, prev:68.1, dock:6.1, region:"Midwest"},
+    {name:"Crossdock North — Midwest",value:70.6, prev:67.9, dock:5.9, region:"Midwest"},
+    {name:"DC Gulf — South Central",  value:69.4, prev:66.8, dock:5.6, region:"South Central"},
+    {name:"DC South — Southeast",     value:68.9, prev:66.2, dock:5.5, region:"Southeast"},
+    {name:"DC Pacific — West Coast",  value:68.4, prev:66.9, dock:5.3, region:"West Coast"},
+    {name:"DC West — Mountain",       value:66.7, prev:65.4, dock:4.8, region:"Mountain"},
+  ],
+  trend: (()=>{ const a=[]; const N=90; const today=new Date();
+    for(let i=N-1;i>=0;i--){ const d=new Date(today); d.setDate(today.getDate()-i);
+      const t=(N-1-i); let v = 65.5 + Math.sin(t*0.5)*0.5;
+      if(t>=60) v += (t-60)*0.19; v += (Math.random()*0.4-0.2);
+      a.push({date:d, value:+v.toFixed(2)}); } return a; })()
+};
+SEED.kpis.forEach(k=>{ k.spark = d3.range(12).map((i)=> k.value*(0.9+0.02*i)+ (Math.random()*k.value*0.03)); });
+const F = { 1:(v)=>v.toFixed(1), 2:(v)=>v.toFixed(2), 3:(v)=>v.toFixed(3) };
+
+// per-metric popover copy (what it measures / why it matters)
+const KPI_META = {
+  ontime:  {measures:"Share of shipments that leave the dock by their promised cutoff, averaged across the network.", why:"The headline promise to every customer. Holding above 99% means the network is still keeping its word despite the load."},
+  accuracy:{measures:"Share of picks with the right item and quantity, before any correction.", why:"Errors here become returns, re-ships, and lost trust. Staying above 99% is what makes running hot safe — for now."},
+  load:    {measures:"Average inbound + outbound loads processed per day across all facilities.", why:"The demand pressing on the network. Rising volume against fixed space is exactly what pushes utilization past target."},
+  dock:    {measures:"Average hours from a trailer touching the dock to its goods being put away and sellable.", why:"The first place congestion shows up. When buildings fill, put-away queues — this climbs before anything else breaks."},
+  labor:   {measures:"Labor hours consumed per load handled — a direct read on operating efficiency.", why:"When space tightens, every move takes more people. Rising labor per load is margin quietly leaking out."},
+  util:    {measures:"Occupied capacity as a share of design capacity, averaged across the network.", why:"The core signal of this brief. Past 65% the network trades its shock absorber for throughput."}
+};
+
+// Every chart svg used to call this and create its OWN local <defs> with
+// id="gg"/id="glow" — since url(#id) references resolve against the whole
+// document's id table (not scoped to the local <svg>), having many duplicate
+// ids on the page at once caused intermittent blank strokes/fills whenever
+// any one chart's redraw cycle (selectAll("*").remove() + re-append) briefly
+// left url(#gg)/url(#glow) pointing at a mid-teardown node. Fixed by creating
+// ONE persistent global defs block (injectGlobalDefs, called once from boot)
+// that every chart references — this is now a no-op kept only so existing
+// call sites don't need to change.
+function ensureDefs(svg){}
+function injectGlobalDefs(){
+  if(document.getElementById("globalChartDefs")) return;
+  const svg=d3.select("body").append("svg").attr("id","globalChartDefs")
+    .style("position","absolute").style("width","0").style("height","0").style("overflow","hidden");
+  const defs=svg.append("defs");
+  const g=defs.append("linearGradient").attr("id","gg").attr("x1","0").attr("x2","1");
+  g.append("stop").attr("offset","0%").attr("stop-color","#35E0D0");
+  g.append("stop").attr("offset","55%").attr("stop-color","#8B7BFF");
+  g.append("stop").attr("offset","100%").attr("stop-color","#F25FD0");
+  const glow=defs.append("filter").attr("id","glow").attr("x","-60%").attr("y","-60%").attr("width","220%").attr("height","220%");
+  glow.append("feGaussianBlur").attr("stdDeviation","5").attr("result","b");
+  const fm=glow.append("feMerge"); fm.append("feMergeNode").attr("in","b"); fm.append("feMergeNode").attr("in","SourceGraphic");
+}
+function countUp(node, to, fmt, dur){
+  const iv=d3.interpolate(0,to), st=performance.now();
+  (function run(t){const pr=Math.min(1,(t-st)/(dur||1300));node.text(fmt(iv(d3.easeCubicOut(pr))));if(pr<1)requestAnimationFrame(run);else node.text(fmt(to));})(st);
+}
+
+// ---------- KPI scorecard ----------
+function drawKpis(hostSel, kpis){
+  const host=d3.select(hostSel).html("");
+  kpis.forEach((k,idx)=>{
+    const c=host.append("div").attr("class","kpi");
+    c.append("div").attr("class","lab").text(k.lab);
+    const val=c.append("div").attr("class","val").style("color",k.color);
+    const num=val.append("span").text("0"); val.append("span").attr("class","u").text(k.unit);
+    c.append("div").attr("class","delta "+(k.good?"up":"watch")).text((k.dir==="up"?"▲ ":"▼ ")+k.delta);
+    const sw=260, sh=34; const svg=c.append("svg").attr("class","spark").attr("viewBox",`0 0 ${sw} ${sh}`).attr("preserveAspectRatio","none"); ensureDefs(svg);
+    const x=d3.scaleLinear().domain([0,k.spark.length-1]).range([2,sw-2]);
+    const y=d3.scaleLinear().domain([d3.min(k.spark)*.98,d3.max(k.spark)*1.02]).range([sh-3,3]);
+    const line=d3.line().x((d,i)=>x(i)).y(d=>y(d)).curve(d3.curveMonotoneX);
+    const area=d3.area().x((d,i)=>x(i)).y0(sh).y1(d=>y(d)).curve(d3.curveMonotoneX);
+    const col=k.good?"#35E0D0":"#F5B24B";
+    svg.append("path").attr("d",area(k.spark)).attr("fill",col).attr("opacity",.12);
+    const p=svg.append("path").attr("d",line(k.spark)).attr("fill","none").attr("stroke",col).attr("stroke-width",2.2).attr("filter","url(#glow)");
+    const L=p.node().getTotalLength(); p.attr("stroke-dasharray",L).attr("stroke-dashoffset",L).transition().delay(400+idx*60).duration(950).attr("stroke-dashoffset",0);
+    countUp(num, k.value, F[k.fmt], 1300+idx*40);
+    if(KPI_META[k.key]) c.append("div").attr("class","info").text("i")
+      .on("mouseenter",(ev)=>openPop(ev.currentTarget, k)).on("mouseleave",scheduleClosePop);
+  });
+}
+
+// ---------- gauge (zoned control-room dial + animated needle) ----------
+function drawGauge(u){
+  const svg=d3.select("#gauge"); svg.selectAll("*").remove(); ensureDefs(svg);
+  const cx=180, cy=200, r=142, thick=22;
+  const scale=d3.scaleLinear().domain([u.min,u.max]).range([-Math.PI,0]).clamp(true);
+  const ang=v=>scale(v)+Math.PI/2;                 // d3.arc convention: 0 = 12 o'clock
+  const px=(th,rad)=>[cx+Math.sin(th)*rad, cy-Math.cos(th)*rad];
+  const arc=d3.arc().innerRadius(r-thick).outerRadius(r);
+  // faint full track
+  svg.append("path").attr("transform",`translate(${cx},${cy})`)
+     .attr("d",arc.startAngle(ang(u.min)).endAngle(ang(u.max))()).attr("fill","rgba(255,255,255,.05)");
+  // capacity zones: healthy → over → hot
+  const hotStart=Math.max(u.target,70);
+  const zones=[[u.min,u.target,"#5AE0A0",.24],[u.target,hotStart,"#F5B24B",.32],[hotStart,u.max,"#F25FD0",.36]];
+  zones.forEach(([z0,z1,c,o])=>{ if(z1<=z0) return;
+    svg.append("path").attr("transform",`translate(${cx},${cy})`)
+       .attr("d",arc.startAngle(ang(z0)).endAngle(ang(z1))()).attr("fill",c).attr("opacity",o); });
+  // zone labels riding just outside the arc
+  [[(u.min+u.target)/2,"HEALTHY","#5AE0A0"],[(u.target+hotStart)/2,"OVER","#F5B24B"],[(hotStart+u.max)/2,"HOT","#F25FD0"]]
+    .forEach(([v,t,c])=>{ const [lx,ly]=px(ang(v),r+15);
+      svg.append("text").attr("x",lx).attr("y",ly+3).attr("text-anchor","middle")
+        .attr("fill",c).attr("font-size",9).attr("font-weight",800).attr("letter-spacing",".1em").attr("opacity",.88).text(t); });
+  // target tick
+  const [t1x,t1y]=px(ang(u.target),r-thick-4), [t2x,t2y]=px(ang(u.target),r+8);
+  svg.append("line").attr("x1",t1x).attr("y1",t1y).attr("x2",t2x).attr("y2",t2y)
+     .attr("stroke","#F5F7FF").attr("stroke-width",3).attr("opacity",.9);
+  // needle + hub (SVG paints on top of the HTML number overlay — number sits behind)
+  const nlen=r-thick-14;
+  const needle=svg.append("line").attr("x1",cx).attr("y1",cy).attr("x2",cx).attr("y2",cy)
+     .attr("stroke","url(#gg)").attr("stroke-width",4).attr("stroke-linecap","round").attr("filter","url(#glow)");
+  svg.append("circle").attr("cx",cx).attr("cy",cy).attr("r",9).attr("fill","#0a0c1a").attr("stroke","url(#gg)").attr("stroke-width",3);
+  const iv=d3.interpolate(u.min,u.value), start=performance.now(), dur=1600;
+  (function tick(t){ const p=Math.min(1,(t-start)/dur); const cur=iv(d3.easeCubicOut(p));
+    const [nx,ny]=px(ang(cur),nlen); needle.attr("x2",nx).attr("y2",ny);
+    d3.select("#gv").text(cur.toFixed(1));
+    if(p<1) requestAnimationFrame(tick); else d3.select("#gv").text(u.value.toFixed(1));
+  })(start);
+  d3.select("#gsub").text(`TARGET ${u.target}%`);
+}
+
+// ---------- ranked scoreboard ----------
+function healthDelta(f){ return f.value>=f.prev ? "var(--magenta)":"var(--teal)"; }
+function drawRail(facs, target){
+  const host=d3.select("#rail").html("");
+  const min=Math.min(target,d3.min(facs,d=>d.value))-3, max=d3.max(facs,d=>d.value)+2;
+  const scale=d3.scaleLinear().domain([min,max]).range([0,100]);
+  facs.forEach((f,i)=>{
+    const seed = (f.idx!=null? f.idx : i);
+    const sc=host.append("div").attr("class","score").on("click",()=>openFac(f, seed));
+    const r1=sc.append("div").attr("class","row1");
+    r1.append("div").attr("class","nm").text(f.name);
+    const rt=r1.append("div").attr("class","rt");
+    const big=rt.append("div").attr("class","big").text("0");
+    rt.append("div").attr("class","d").style("color",healthDelta(f)).text((f.value>=f.prev?"+":"−")+Math.abs(f.value-f.prev).toFixed(1));
+    const bar=sc.append("div").attr("class","bar");
+    const fill=bar.append("div").attr("class","fill");
+    bar.append("div").attr("class","mark").style("left",scale(f.prev)+"%");
+    sc.append("div").attr("class","cap").html(`up on <b>${f.prev.toFixed(1)}%</b> last period · ${f.region}`);
+    sc.append("div").attr("class","go").text("›");
+    setTimeout(()=>fill.style("width",scale(f.value)+"%"), 350+i*90);
+    countUp(big, f.value, v=>v.toFixed(1), 1300+i*40);
+  });
+}
+
+// ---------- facility detail modal ----------
+function healthOf(v,target){ return v>=70 ? "hot" : (v>=target ? "watch" : "ok"); }
+function healthLabel(h){ return h==="hot"?"RUNNING HOT":h==="watch"?"OVER TARGET":"WITHIN TARGET"; }
+function facAction(f){
+  const over=f.value-D.utilization.target;
+  if(f.value>=70) return "Route ~10% of inbound to a partner cross-dock this month and add put-away labor — pull it back under target before peak.";
+  if(over>=3)     return "Rebalance a share of inbound volume to a cooler sister site, and watch dock-to-stock weekly.";
+  return "Hold and monitor — this site still carries the most slack in the network.";
+}
+// deterministic 30-day series ending at the facility's current value
+function synthFacTrend(f, seed){
+  let s=((seed+1)*9301)%233280; const rnd=()=>{ s=(s*9301+49297)%233280; return s/233280; };
+  const N=30, out=[], start=f.prev, end=f.value;
+  for(let i=0;i<N;i++){ const t=i/(N-1); let v=start+(end-start)*Math.pow(t,1.4); v+=(rnd()-0.5)*0.6; out.push(v); }
+  out[N-1]=end; return out;
+}
+function drawMiniTrend(vals, last, target){
+  const svg=d3.select("#mtrend"); svg.selectAll("*").remove(); ensureDefs(svg);
+  const W=496,H=110,m={t:12,r:8,b:12,l:8};
+  const x=d3.scaleLinear().domain([0,vals.length-1]).range([m.l,W-m.r]);
+  const y=d3.scaleLinear().domain([Math.min(target,d3.min(vals))-1, d3.max(vals)+1]).range([H-m.b,m.t]);
+  svg.append("line").attr("x1",m.l).attr("x2",W-m.r).attr("y1",y(target)).attr("y2",y(target)).attr("stroke","#F5B24B").attr("stroke-dasharray","4 4").attr("opacity",.5);
+  const gr=svg.select("defs.shared").append("linearGradient").attr("id","mtg").attr("x1","0").attr("x2","0").attr("y1","0").attr("y2","1");
+  gr.append("stop").attr("offset","0%").attr("stop-color","#8B7BFF").attr("stop-opacity",.4); gr.append("stop").attr("offset","100%").attr("stop-color","#8B7BFF").attr("stop-opacity",0);
+  const area=d3.area().x((d,i)=>x(i)).y0(H).y1(d=>y(d)).curve(d3.curveMonotoneX);
+  const line=d3.line().x((d,i)=>x(i)).y(d=>y(d)).curve(d3.curveMonotoneX);
+  svg.append("path").attr("d",area(vals)).attr("fill","url(#mtg)");
+  const p=svg.append("path").attr("d",line(vals)).attr("fill","none").attr("stroke","url(#gg)").attr("stroke-width",2.6).attr("filter","url(#glow)");
+  const L=p.node().getTotalLength(); p.attr("stroke-dasharray",L).attr("stroke-dashoffset",L).transition().duration(1100).attr("stroke-dashoffset",0);
+  svg.append("circle").attr("cx",x(vals.length-1)).attr("cy",y(last)).attr("r",4).attr("fill","#F25FD0");
+}
+function openFac(f, seed){
+  d3.select("#mRegion").text(f.region||"NETWORK"); d3.select("#mName").text(f.name);
+  d3.select("#mDelta").style("color", f.value>=f.prev?"var(--magenta)":"var(--teal)")
+    .text((f.value>=f.prev?"+":"−")+Math.abs(f.value-f.prev).toFixed(1)+" vs last period");
+  const h=healthOf(f.value, D.utilization.target);
+  d3.select("#mStatus").attr("class","status "+h).text(healthLabel(h));
+  d3.select("#mAction").text(facAction(f));
+  document.getElementById("facModal").classList.add("show");
+  countUp(d3.select("#mVal"), f.value, v=>v.toFixed(1), 900);
+  drawMiniTrend(synthFacTrend(f, seed), f.value, D.utilization.target);
+}
+function closeFac(){ document.getElementById("facModal").classList.remove("show"); }
+
+// ---------- KPI info popover ----------
+let popCloseTimer=null;
+function scheduleClosePop(){ clearTimeout(popCloseTimer); popCloseTimer=setTimeout(closePop,120); }
+function cancelClosePop(){ clearTimeout(popCloseTimer); }
+function openPop(anchor, k){
+  cancelClosePop();
+  const meta=KPI_META[k.key]||{measures:k.lab, why:""};
+  d3.select("#popTitle").text(k.lab); d3.select("#popMeasures").text(meta.measures); d3.select("#popWhy").text(meta.why);
+  const pop=document.getElementById("pop"); pop.classList.add("show");
+  const r=anchor.getBoundingClientRect(); const pw=300, ph=pop.offsetHeight;
+  let left=r.left-6, top=r.top-ph-10;
+  if(left+pw>window.innerWidth-16) left=window.innerWidth-16-pw;
+  if(top<70) top=r.bottom+10;
+  pop.style.left=Math.max(16,left)+"px"; pop.style.top=top+"px";
+}
+function closePop(){ document.getElementById("pop").classList.remove("show"); }
+
+// ---------- mini cost sparks ----------
+function drawCostSpark(sel, base, up){
+  const svg=d3.select(sel); svg.selectAll("*").remove(); ensureDefs(svg);
+  const W=520,H=90,m=8; const N=30; const data=d3.range(N).map(i=>{ let v=base*(0.9); if(i>N-12) v+=up*((i-(N-12))/11); return v+ (Math.random()*base*0.02); });
+  const x=d3.scaleLinear().domain([0,N-1]).range([m,W-m]);
+  const y=d3.scaleLinear().domain([d3.min(data)*.98,d3.max(data)*1.03]).range([H-m,m]);
+  const area=d3.area().x((d,i)=>x(i)).y0(H).y1(d=>y(d)).curve(d3.curveMonotoneX);
+  const line=d3.line().x((d,i)=>x(i)).y(d=>y(d)).curve(d3.curveMonotoneX);
+  const grad=svg.select("defs.shared").append("linearGradient").attr("id",sel.replace("#","")+"g").attr("x1","0").attr("x2","0").attr("y1","0").attr("y2","1");
+  grad.append("stop").attr("offset","0%").attr("stop-color","#F5B24B").attr("stop-opacity",.32);
+  grad.append("stop").attr("offset","100%").attr("stop-color","#F5B24B").attr("stop-opacity",0);
+  svg.append("path").attr("d",area(data)).attr("fill",`url(#${sel.replace("#","")}g)`);
+  const p=svg.append("path").attr("d",line(data)).attr("fill","none").attr("stroke","#F5B24B").attr("stroke-width",2.4).attr("filter","url(#glow)");
+  const L=p.node().getTotalLength(); p.attr("stroke-dasharray",L).attr("stroke-dashoffset",L).transition().duration(1300).attr("stroke-dashoffset",0);
+}
+
+// ---------- correlation scatter (utilization vs dock-to-stock, by facility) ----------
+// FALLBACK ONLY: deterministic put-away hours from how far over target a facility runs,
+// used when a facility carries no real per-facility dock value (f.dock). The live/embedded
+// and SEED paths supply real per-facility dock-to-stock, so the scatter plots measured points.
+function synthCost(f){
+  let s=((f.idx+3)*7919)%233280; const rnd=()=>{ s=(s*9301+49297)%233280; return s/233280; };
+  return 4.55 + (f.value-65)*0.34 + (rnd()-0.5)*0.22;
+}
+function drawScatter(){
+  const svg=d3.select("#scatter"); svg.selectAll("*").remove(); ensureDefs(svg);
+  const box=svg.node().getBoundingClientRect(); const W=box.width||900, H=box.height||300;
+  const m={t:18,r:24,b:44,l:56};
+  const facs=(FACS.length?FACS:normFacs());
+  const pts=facs.map(f=>({name:f.name, region:f.region, x:f.value, y:(f.dock!=null?f.dock:synthCost(f)), h:healthOf(f.value,D.utilization.target)}));
+  const x=d3.scaleLinear().domain([d3.min(pts,p=>p.x)-1.5, d3.max(pts,p=>p.x)+1.5]).range([m.l,W-m.r]);
+  const y=d3.scaleLinear().domain([d3.min(pts,p=>p.y)-0.3, d3.max(pts,p=>p.y)+0.3]).range([H-m.b,m.t]);
+  svg.append("line").attr("x1",x(65)).attr("x2",x(65)).attr("y1",m.t).attr("y2",H-m.b).attr("stroke","#F5B24B").attr("stroke-dasharray","4 4").attr("opacity",.45);
+  svg.append("text").attr("x",x(65)+6).attr("y",m.t+12).attr("fill","#F5B24B").attr("font-size",10).attr("letter-spacing",".08em").text("TARGET 65%");
+  svg.append("g").attr("class","axis").attr("transform",`translate(0,${H-m.b})`).call(d3.axisBottom(x).ticks(6).tickFormat(d=>d+"%"));
+  svg.append("g").attr("class","axis").attr("transform",`translate(${m.l},0)`).call(d3.axisLeft(y).ticks(5).tickFormat(d=>d+"h"));
+  svg.append("text").attr("x",(m.l+W-m.r)/2).attr("y",H-6).attr("text-anchor","middle").attr("fill","#5b638f").attr("font-size",11).attr("letter-spacing",".1em").text("WAREHOUSE UTILIZATION →");
+  svg.append("text").attr("transform",`translate(16,${(m.t+H-m.b)/2}) rotate(-90)`).attr("text-anchor","middle").attr("fill","#5b638f").attr("font-size",11).attr("letter-spacing",".1em").text("DOCK-TO-STOCK HRS →");
+  // least-squares fit line, drawn left→right
+  const n=pts.length, sx=d3.sum(pts,p=>p.x), sy=d3.sum(pts,p=>p.y), sxy=d3.sum(pts,p=>p.x*p.y), sxx=d3.sum(pts,p=>p.x*p.x);
+  const slope=(n*sxy-sx*sy)/(n*sxx-sx*sx), intercept=(sy-slope*sx)/n;
+  const xa=x.domain()[0], xb=x.domain()[1];
+  const fit=svg.append("line").attr("class","sc-fit").attr("x1",x(xa)).attr("y1",y(slope*xa+intercept)).attr("x2",x(xa)).attr("y2",y(slope*xa+intercept));
+  fit.transition().delay(500).duration(900).attr("x2",x(xb)).attr("y2",y(slope*xb+intercept));
+  const cmap={hot:"#F25FD0",watch:"#F5B24B",ok:"#5AE0A0"};
+  const g=svg.selectAll("g.pt").data(pts).enter().append("g").attr("class","pt").attr("transform",p=>`translate(${x(p.x)},${y(p.y)})`);
+  g.append("circle").attr("class","scatter-dot").attr("r",0).attr("fill",p=>cmap[p.h]).attr("filter","url(#glow)").attr("opacity",.92)
+    .transition().delay((p,i)=>300+i*90).duration(500).attr("r",8);
+  // facility name on every dot, colored by health, sitting just above the point
+  g.append("text").attr("class","sc-lbl").attr("y",-14).attr("text-anchor","middle")
+    .attr("fill",p=>cmap[p.h]).attr("font-size",10).attr("font-weight",700).attr("letter-spacing",".02em")
+    .attr("opacity",0).text(p=>p.name.split(" — ")[0])
+    .transition().delay((p,i)=>500+i*90).duration(400).attr("opacity",.95);
+}
+
+// ---------- trend ----------
+function drawTrend(data){
+  const svg=d3.select("#trend"); svg.selectAll("*").remove(); ensureDefs(svg);
+  const box=svg.node().getBoundingClientRect(); const W=box.width, H=box.height||360;
+  const m={t:16,r:20,b:30,l:48};
+  const x=d3.scaleTime().domain(d3.extent(data,d=>d.date)).range([m.l,W-m.r]);
+  const y=d3.scaleLinear().domain([d3.min(data,d=>d.value)-1.5, d3.max(data,d=>d.value)+1.5]).range([H-m.b,m.t]);
+  const grad=svg.select("defs.shared").append("linearGradient").attr("id","tg").attr("x1","0").attr("x2","0").attr("y1","0").attr("y2","1");
+  grad.append("stop").attr("offset","0%").attr("stop-color","#8B7BFF").attr("stop-opacity",.38);
+  grad.append("stop").attr("offset","100%").attr("stop-color","#8B7BFF").attr("stop-opacity",0);
+  svg.append("line").attr("x1",m.l).attr("x2",W-m.r).attr("y1",y(65)).attr("y2",y(65)).attr("stroke","#F5B24B").attr("stroke-dasharray","4 4").attr("opacity",.6);
+  svg.append("text").attr("x",W-m.r).attr("y",y(65)-6).attr("text-anchor","end").attr("fill","#F5B24B").attr("font-size",10).attr("letter-spacing",".1em").text("TARGET 65%");
+  svg.append("g").attr("class","axis").attr("transform",`translate(0,${H-m.b})`).call(d3.axisBottom(x).ticks(6).tickFormat(d3.timeFormat("%b %d")));
+  svg.append("g").attr("class","axis").attr("transform",`translate(${m.l},0)`).call(d3.axisLeft(y).ticks(5).tickFormat(d=>d+"%"));
+  const area=d3.area().x(d=>x(d.date)).y0(H-m.b).y1(d=>y(d.value)).curve(d3.curveMonotoneX);
+  const line=d3.line().x(d=>x(d.date)).y(d=>y(d.value)).curve(d3.curveMonotoneX);
+  svg.append("path").attr("d",area(data)).attr("fill","url(#tg)");
+  const p=svg.append("path").attr("d",line(data)).attr("fill","none").attr("stroke","url(#gg)").attr("stroke-width",3).attr("filter","url(#glow)");
+  const L=p.node().getTotalLength(); p.attr("stroke-dasharray",L).attr("stroke-dashoffset",L).transition().duration(1700).ease(d3.easeCubicInOut).attr("stroke-dashoffset",0);
+  const last=data[data.length-1];
+  svg.append("circle").attr("cx",x(last.date)).attr("cy",y(last.value)).attr("r",5).attr("fill","#F25FD0").attr("opacity",0).transition().delay(1600).attr("opacity",1);
+  svg.append("text").attr("x",x(last.date)-8).attr("y",y(last.value)-10).attr("text-anchor","end").attr("fill","#F25FD0").attr("font-size",13).attr("font-weight",700).attr("opacity",0).text(last.value.toFixed(1)+"%").transition().delay(1600).attr("opacity",1);
+  // interactive crosshair
+  const focus=svg.append("g").style("display","none");
+  focus.append("line").attr("y1",m.t).attr("y2",H-m.b).attr("stroke","rgba(139,123,255,.6)").attr("stroke-width",1);
+  const fdot=focus.append("circle").attr("r",4.5).attr("fill","#8B7BFF").attr("stroke","#fff").attr("stroke-width",1.5);
+  const bis=d3.bisector(d=>d.date).left, ttip=document.getElementById("ttip");
+  svg.append("rect").attr("x",m.l).attr("y",m.t).attr("width",Math.max(0,W-m.r-m.l)).attr("height",Math.max(0,H-m.b-m.t)).attr("fill","transparent")
+    .on("mouseenter",()=>{ focus.style("display",null); ttip.style.opacity=1; })
+    .on("mouseleave",()=>{ focus.style("display","none"); ttip.style.opacity=0; })
+    .on("mousemove",(ev)=>{
+      const mx=d3.pointer(ev, svg.node())[0]; const x0=x.invert(mx);
+      let i=bis(data,x0); i=Math.max(0,Math.min(data.length-1,i));
+      if(i>0 && (x0-data[i-1].date) < (data[i].date-x0)) i=i-1;
+      const d=data[i];
+      focus.select("line").attr("x1",x(d.date)).attr("x2",x(d.date));
+      fdot.attr("cx",x(d.date)).attr("cy",y(d.value));
+      d3.select("#ttD").text(d3.timeFormat("%b %d, %Y")(d.date)); d3.select("#ttV").text(d.value.toFixed(1)+"%");
+      ttip.style.left=(ev.clientX+16)+"px"; ttip.style.top=(ev.clientY-12)+"px";
+    });
+}
+
+// ---------- region filter for the scoreboard ----------
+let FACS=[], curRegion="All";
+function normFacs(){ return D.facilities.map((f,i)=>({idx:i, prev:(f.prev!=null?f.prev:f.value-2.5), region:f.region||"Network", ...f})); }
+function buildChips(){
+  const regions=["All", ...Array.from(new Set(FACS.map(f=>f.region))).filter(Boolean)];
+  if(!regions.includes(curRegion)) curRegion="All";   // global filter may have removed the chip's region
+  const host=d3.select("#regionChips").html("");
+  regions.forEach(r=>{ host.append("div").attr("class","chip"+(r===curRegion?" on":"")).text(r)
+    .on("click",()=>{ curRegion=r; buildChips(); renderRail(); }); });
+}
+function renderRail(){
+  const facs = curRegion==="All" ? FACS : FACS.filter(f=>f.region===curRegion);
+  drawRail(facs, D.utilization.target);
+  const avg=d3.mean(facs,d=>d.value)||0, hot=facs.filter(f=>f.value>=70).length;
+  d3.select("#railReadout").html(`<b>${facs.length}</b> facilit${facs.length===1?"y":"ies"} · avg <b>${avg.toFixed(1)}%</b> · <b>${hot}</b> running hot (≥70%)`);
+}
+
+// ---------- sticky chapter dot-nav + scroll spy ----------
+function buildNav(){
+  const items=[["top","Overview"],["ch1","Executive summary"],["ch2","Utilization"],["ch3","Where the pressure is"],
+    ["ch4","The cost of service"],["ch5","The 90-day trend"],["ch6","Service still held"],["ch7","Recommended actions"],["close","What it made possible"]];
+  const nav=d3.select("body").append("div").attr("class","dotnav");
+  items.forEach(([id,label])=>{ const a=nav.append("a").attr("href","#"+id); a.append("span").attr("class","tip").text(label); });
+  const spy=new IntersectionObserver((es)=>{ es.forEach(e=>{ if(e.isIntersecting){
+    document.querySelectorAll(".dotnav a").forEach(a=>a.classList.toggle("on", a.getAttribute("href")==="#"+e.target.id)); } }); },
+    {rootMargin:"-45% 0px -45% 0px"});
+  items.map(i=>document.getElementById(i[0])).filter(Boolean).forEach(s=>spy.observe(s));
+}
+
+// ---------- scroll orchestration ----------
+let D = SEED, drawn={};
+function drawFor(id){
+  if(drawn[id]) return; drawn[id]=true;
+  if(id==="kpis")  drawKpis("#kpis", D.kpis);
+  if(id==="gauge") drawGauge(D.utilization);
+  if(id==="rail"){ FACS=normFacs(); buildChips(); renderRail(); }
+  if(id==="scatter") drawScatter();
+  if(id==="cost"){ const dock=D.kpis.find(k=>k.key==="dock"), labor=D.kpis.find(k=>k.key==="labor");
+    countUp(d3.select("#cd1"), dock.value, F[2]); countUp(d3.select("#cd2"), labor.value, F[3]);
+    drawCostSpark("#costspark1", dock.value, 0.7); drawCostSpark("#costspark2", labor.value, 0.09); }
+  if(id==="trend") drawTrend(D.trend);
+  if(id==="kpis2") drawKpis("#kpis2", D.kpis.filter(k=>k.key==="ontime"||k.key==="accuracy"));
+}
+
+function setup(){
+  buildNav();
+  // reveal-on-scroll
+  const io=new IntersectionObserver((es)=>{ es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target);} }); }, {threshold:.18});
+  document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
+  // viz triggers when their stage cards enter
+  const map=[["#kpis","kpis"],["#gauge","gauge"],["#rail","rail"],["#scatter","scatter"],["#costspark1","cost"],["#trend","trend"],["#kpis2","kpis2"]];
+  const vo=new IntersectionObserver((es)=>{ es.forEach(e=>{ if(e.isIntersecting){ const hit=map.find(m=>e.target.matches(m[0])); if(hit) drawFor(hit[1]); vo.unobserve(e.target);} }); }, {threshold:.25});
+  map.forEach(m=>{ const el=document.querySelector(m[0]); if(el) vo.observe(el); });
+  // progress bar
+  const prog=document.getElementById("prog");
+  window.addEventListener("scroll",()=>{ const h=document.documentElement; const p=h.scrollTop/(h.scrollHeight-h.clientHeight); prog.style.width=(p*100)+"%"; closePop(); },{passive:true});
+  window.addEventListener("resize",()=>{ if(drawn.trend) drawTrend(D.trend); if(drawn.scatter) drawScatter(); });
+  // expandable "Read more" narratives
+  document.querySelectorAll(".readmore").forEach(b=>b.addEventListener("click",()=>{
+    const t=document.getElementById(b.dataset.more); if(!t) return;
+    const open=t.classList.toggle("open"); b.classList.toggle("open",open);
+    b.childNodes[0].nodeValue = open ? "Read less " : "Read more ";
+  }));
+  // interactivity: modal + popover close behavior
+  document.getElementById("facClose").addEventListener("click", closeFac);
+  document.getElementById("facModal").addEventListener("click",(e)=>{ if(e.target.id==="facModal") closeFac(); });
+  document.addEventListener("keydown",(e)=>{ if(e.key==="Escape"){ closeFac(); closePop(); } });
+  document.addEventListener("click",(e)=>{ const pop=document.getElementById("pop"); if(pop.classList.contains("show") && !pop.contains(e.target) && !e.target.classList.contains("info")) closePop(); });
+  // hover-driven popover: keep it open while the cursor is on the popover, close when it leaves
+  const popEl=document.getElementById("pop");
+  popEl.addEventListener("mouseenter",cancelClosePop);
+  popEl.addEventListener("mouseleave",scheduleClosePop);
+  // topbar Demo/Live toggle: flips the whole story between live feeder data and the frozen SEED
+  document.querySelectorAll(".toggle button").forEach(b=>b.addEventListener("click",()=>{
+    if(b.classList.contains("on")) return;
+    b.parentNode.querySelectorAll("button").forEach(x=>x.classList.remove("on")); b.classList.add("on");
+    applyMode(b.dataset.mode);
+  }));
+  // Explore view: enter/exit + cosmetic Save toast (no persistence)
+  const be=document.getElementById("btnExplore");   if(be) be.addEventListener("click", enterExplore);
+  const bb=document.getElementById("btnBackStory"); if(bb) bb.addEventListener("click", exitExplore);
+  const bs=document.getElementById("btnSave");       if(bs) bs.addEventListener("click", toastSave);
+}
+
+// ---------- live data from the dashboard's feeder worksheet (Extensions API) ----------
+// One hidden crosstab on the dashboard supplies Date × Facility × the six measures;
+// we derive the whole contract client-side (same math as pulse_values.py), so the
+// extension reflects the workbook live-on-open with no baked snapshot or server job.
+const WS_NAMES = ["coo_feed_data","feed_data","feed","feed_daily_facility","COO Feed"];  // accepted feeder-sheet names
+const MEAS = [
+  {key:"ontime",  cap:"On Time Shipping Pct",      pct:true,  fmt:2, unit:"%", up:true,  color:"var(--teal)",  lab:"ON-TIME SHIPPING"},
+  {key:"accuracy",cap:"Order Accuracy Pct",         pct:true,  fmt:2, unit:"%", up:true,  color:"var(--teal)",  lab:"PICK ACCURACY"},
+  {key:"load",    cap:"Load Volume",                pct:false, fmt:2, unit:"",  up:true,  color:"var(--white)", lab:"LOAD VOLUME / DAY"},
+  {key:"dock",    cap:"Dock To Stock Hours",        pct:false, fmt:2, unit:"h", up:false, color:"var(--amber)", lab:"DOCK-TO-STOCK HRS"},
+  {key:"labor",   cap:"Labor Hours Per Load",       pct:false, fmt:3, unit:"",  up:false, color:"var(--amber)", lab:"LABOR HRS / LOAD"},
+  {key:"util",    cap:"Warehouse Utilization Pct",  pct:true,  fmt:1, unit:"%", up:false, color:"var(--gold)",  lab:"WAREHOUSE UTIL"},
+];
+
+// ---------- packaged mode (Tableau Data App): live queryAsync instead of a feeder sheet ----------
+// build_standalone.py --packaged --query <q.json> injects window.__PKG_QUERY__ = the exact VDS
+// query you validated with query-datasource ({datasource:"<published DS name>", fields:[...],
+// filters:[...]}). Hosted mode leaves it unset, so PKG_QUERY is null and the dashboard feeder-sheet
+// read below runs unchanged. readPackagedTable() returns the same {columns, data} shape as a
+// summary DataTable, so the rest of the reader parses it with no other changes. Use fieldAlias in
+// the query so the result keys match the MEAS captions.
+const PKG_QUERY = window.__PKG_QUERY__ || null;
+async function readPackagedTable(){
+  const list = await tableau.extensions.workbook.getAllDataSourcesAsync();
+  const want = (PKG_QUERY.datasource||"").toLowerCase();
+  const ds = list.find(d=> want && d.name.toLowerCase()===want) || list.find(d=> want && d.name.toLowerCase().includes(want)) || list[0];
+  if(!ds) throw new Error("no datasource wired into the workbook");
+  const res = await ds.queryAsync({fields:PKG_QUERY.fields, filters:PKG_QUERY.filters||[]});
+  const rows = (res && Array.isArray(res.data)) ? res.data : [];
+  const keys = rows.length ? Object.keys(rows[0]) : [];
+  return { columns: keys.map((k,i)=>({fieldName:k, index:i})),
+           data: rows.map(o=> keys.map(k=>({value:o[k], nativeValue:o[k], formattedValue:o[k]==null?"":String(o[k])}))) };
+}
+async function readFromWorksheet(){
+  let dt;
+  if(PKG_QUERY){ dt = await readPackagedTable(); }   // packaged: live queryAsync, no feeder sheet
+  else {
+  const dash = tableau.extensions.dashboardContent.dashboard;
+  const list = dash.worksheets;
+  const ws = list.find(w=>WS_NAMES.includes(w.name)) || list.find(w=>/feed/i.test(w.name));
+  if(!ws) throw new Error("feeder worksheet not found");
+  const opt = {ignoreSelection:true, maxRows:0};
+  dt = await (ws.getSummaryDataReaderAsync
+    ? ws.getSummaryDataReaderAsync(10000, opt).then(async rdr=>{ const t=await rdr.getAllPagesAsync(); await rdr.releaseAsync(); return t; })
+    : ws.getSummaryDataAsync(opt));
+  }
+  const cols = dt.columns, data = dt.data;
+  const colIdx = (sub)=>{ const c=cols.find(c=>c.fieldName.toLowerCase().includes(sub.toLowerCase())); return c?c.index:-1; };
+  const di = colIdx("Date"), fi = colIdx("Facility"), ri = colIdx("Region");
+  if(di<0 || fi<0) throw new Error("feeder sheet missing Date/Facility columns");
+  const mi = {}; MEAS.forEach(m=> mi[m.key]=colIdx(m.cap));
+  const num = (dv)=>{ const n = dv.nativeValue!=null?dv.nativeValue:dv.value; const f=parseFloat(n); return isNaN(f)?0:f; };
+  const dstr = (dv)=>{ const v = dv.nativeValue!=null?dv.nativeValue:dv.value; if(v instanceof Date) return v.toISOString().slice(0,10); const s=String(v); return s.slice(0,10); };
+  const cstr = (dv)=> String(dv.formattedValue!=null?dv.formattedValue:dv.value);
+  const rows = data.map(r=>{
+    const o = {date:dstr(r[di]), facility:cstr(r[fi])};
+    // prefer an explicit Region feeder column; otherwise parse it from the facility name
+    o.region = ri>=0 ? cstr(r[ri]) : regionOf(o.facility);
+    MEAS.forEach(m=> o[m.key] = mi[m.key]>=0 ? num(r[mi[m.key]]) : 0);
+    return o;
+  }).filter(r=>r.date && r.date.length>=10);
+  if(!rows.length) throw new Error("feeder sheet returned no rows");
+  liveRows = rows;                       // cache raw rows so the filter bar can re-slice client-side
+  return contractFromRows(rows, FILTER.days);
+}
+
+function contractFromRows(rows, days=90){
+  rows.sort((a,b)=> a.date<b.date?-1:1);
+  const maxD = new Date(rows[rows.length-1].date+"T00:00:00"), DAY=86400000;
+  const cut = (n)=> new Date(maxD.getTime()-n*DAY).toISOString().slice(0,10);
+  // momentum split scales with the window: recent third vs the third before it
+  // (days=90 → 30 vs 30, preserving the original story's comparison exactly).
+  const seg = Math.max(1, Math.round(days/3));
+  const dWin=cut(days), dRec=cut(seg), dPri=cut(2*seg);
+  const w90 = rows.filter(r=> r.date>dWin);            // selected window (drives displayed averages/trend)
+  const w30 = rows.filter(r=> r.date>dRec);            // recent segment
+  const wPri= rows.filter(r=> r.date>dPri && r.date<=dRec);  // prior segment
+  const avg = (arr,k)=> arr.length ? arr.reduce((s,r)=>s+r[k],0)/arr.length : 0;
+  const mov = (v,w=7)=> v.map((_,i)=>{ const lo=Math.max(0,i-w+1), s=v.slice(lo,i+1); return s.reduce((a,b)=>a+b,0)/s.length; });
+  const down= (v,n=14)=>{ if(v.length<=n) return v; const st=(v.length-1)/(n-1); return d3.range(n).map(i=>v[Math.round(i*st)]); };
+  const byDate={}; w90.forEach(r=>{ (byDate[r.date]=byDate[r.date]||[]).push(r); });
+  const dates=Object.keys(byDate).sort();
+  const dailyAvg=(k)=> dates.map(d=>{ const g=byDate[d]; return g.reduce((s,r)=>s+r[k],0)/g.length; });
+
+  const kpis = MEAS.map(m=>{
+    const sc = m.pct?100:1;
+    const disp=avg(w90,m.key)*sc, delta=(avg(w30,m.key)-avg(wPri,m.key))*sc, up=delta>=0;
+    const dtxt=(up?"+":"−")+Math.abs(delta).toFixed(m.pct?1:2);
+    const spark=down(mov(dailyAvg(m.key).map(v=>v*sc),7),14).map(x=>+x.toFixed(4));
+    return {key:m.key, lab:m.lab, value:+disp.toFixed(m.fmt), unit:m.unit, fmt:m.fmt,
+            dir:up?"up":"down", delta:dtxt, good:(up===m.up), color:m.color, spark};
+  });
+  const util = kpis.find(k=>k.key==="util").value;
+
+  const fCur={}, fPri={}, fDock={};
+  w90.forEach(r=>{ (fCur[r.facility]=fCur[r.facility]||[]).push(r.util); (fDock[r.facility]=fDock[r.facility]||[]).push(r.dock); });
+  wPri.forEach(r=>{ (fPri[r.facility]=fPri[r.facility]||[]).push(r.util); });
+  const facilities = Object.keys(fCur).map(name=>{
+    const c=fCur[name], v=c.reduce((a,b)=>a+b,0)/c.length*100;
+    const p=fPri[name], prev = p&&p.length ? p.reduce((a,b)=>a+b,0)/p.length*100 : v-2.5;
+    const dk=fDock[name], dock = dk&&dk.length ? dk.reduce((a,b)=>a+b,0)/dk.length : null;   // real per-facility dock-to-stock (hours, 90-day avg)
+    const region = (name.split(/\s[—–-]\s/)[1]||"Network").trim();
+    return {name, value:+v.toFixed(1), prev:+prev.toFixed(1), dock: dock!=null?+dock.toFixed(2):null, region};
+  }).sort((a,b)=> b.value-a.value);
+  const peak = facilities.length ? {value:facilities[0].value, facility:facilities[0].name} : {value:util, facility:"—"};
+
+  const utilMA = mov(dailyAvg("util").map(v=>v*100),7);
+  const trend = dates.map((d,i)=>({date:d, value:+utilMA[i].toFixed(2)}));
+
+  return {
+    asof: new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}),
+    source: "live-extension",
+    utilization:{value:util, target:65, min:50, max:80},
+    peak, kpis, facilities, trend
+  };
+}
+function normalize(d){ d.kpis&&d.kpis.forEach(k=>{ if(!k.spark) k.spark=d3.range(12).map(i=>k.value*(0.95+0.01*i)); }); if(d.trend) d.trend.forEach(t=>{ if(typeof t.date==="string") t.date=new Date(t.date); }); return d; }
+// resolve the best-available LIVE data (once per load), cached for the topbar toggle:
+//   1) feeder worksheet (embedded in Tableau)  2) baked nightly snapshot  3) local api  →  null
+let liveData = null;
+// ---- Path A live filter state: client-side re-slice of the cached feeder rows ----
+// Filters act on liveRows (raw feeder rows) only; Demo mode / snapshot fallbacks have no
+// row-level detail, so the bar is inert there (syncFilterBar greys it out).
+let liveRows = null, curMode = "live";
+const FILTER = { days:90, regions:null, facilities:null };   // Sets, or null = all
+const regionOf = (name)=> ((name||"").split(/\s[—–-]\s/)[1]||"Network").trim();
+// region of a cached row: explicit feeder Region column if present, else parsed from the facility name
+const regOfRow = (r)=> r.region || regionOf(r.facility);
+function sliceRows(rows){
+  return rows.filter(r=>
+    (!FILTER.regions    || FILTER.regions.has(regOfRow(r))) &&
+    (!FILTER.facilities || FILTER.facilities.has(r.facility)));
+}
+async function resolveLive(){
+  if(window.tableau && tableau.extensions && tableau.extensions.initializeAsync){
+    try{ await tableau.extensions.initializeAsync(); return normalize(await readFromWorksheet()); }
+    catch(e){ /* not embedded, or feeder sheet absent — fall back */ }
+  }
+  if(window.__LIVE__){ return normalize(window.__LIVE__); }
+  try{ const r=await fetch("api/metrics"); if(r.ok) return normalize(await r.json()); }catch(e){}
+  return null;
+}
+// STORY always shows its one authored window (90 days). All windowing/filtering lives in
+// the Explore view (DX), so the story header never reflects FILTER.days.
+function effWindow(){ return 90; }
+function header(){ const n=(D.facilities&&D.facilities.length)||6, w=effWindow(); d3.select("#asof").text(n+" FACILITIES · "+(D.asof||"")+" · PREVIOUS "+w+" DAYS");
+  document.querySelectorAll(".win").forEach(e=> e.textContent="previous "+w+" days"); paintProse(); }
+// keep every hardcoded prose/heading figure in lockstep with the live contract D,
+// so section text can never disagree with the metric cards / gauge / rail it describes.
+function paintProse(){
+  const u = D.utilization || {value:0, target:65};
+  const util = +u.value, tgt = +u.target, diff = util - tgt;
+  const short  = (nm)=> (nm||"").split(/\s[—–-]\s/)[0].trim();
+  const region = (nm)=> ((nm||"").split(/\s[—–-]\s/)[1]||"Network").trim();
+  const facs = ((D.facilities&&D.facilities.length)?D.facilities:normFacs()).slice().sort((a,b)=>b.value-a.value);
+  const f0 = facs[0]||{}, f1 = facs[1]||{};
+  const fDelta = (f)=> (f&&f.value!=null&&f.prev!=null) ? ((f.value>=f.prev?"+":"−")+Math.abs(f.value-f.prev).toFixed(1)) : "";
+  const r0 = region(f0.name), r1 = region(f1.name);
+  const dock = D.kpis&&D.kpis.find(k=>k.key==="dock"), labor = D.kpis&&D.kpis.find(k=>k.key==="labor");
+  const kDelta = (k)=> k ? ((k.dir==="up"?"▲ ":"▼ ")+k.delta) : "";
+  // the trend chart labels its final point (7-day MA endpoint) — bind prose to that same
+  // number so "climb toward X%" matches the dot the reader lands on, not the 90-day avg KPI.
+  const trendPeak = (D.trend&&D.trend.length) ? D.trend[D.trend.length-1].value : util;
+  const V = {
+    util: util.toFixed(1),
+    target: String(tgt),
+    utilDiff: Math.abs(diff).toFixed(1),
+    utilOver: diff>=0 ? "above" : "below",
+    topRegion: r0,
+    topPairRegion: (r0===r1) ? ("both "+r0) : (r0+" & "+r1),
+    f0short: short(f0.name), f1short: short(f1.name),
+    f0name: f0.name||"", f1name: f1.name||"",
+    f0val: (f0.value!=null?f0.value.toFixed(1):"—"),
+    f1val: (f1.value!=null?f1.value.toFixed(1):"—"),
+    f0delta: fDelta(f0), f1delta: fDelta(f1),
+    dockDelta: kDelta(dock), laborDelta: kDelta(labor),
+    trendPeak: Math.round(trendPeak),
+  };
+  document.querySelectorAll("[data-v]").forEach(el=>{ const k=el.getAttribute("data-v"); if(V[k]!=null && V[k]!=="") el.textContent=V[k]; });
+}
+// topbar toggle: "live" = resolved feeder/snapshot data, "demo" = the bundled frozen SEED.
+// re-renders every viz in place (each draw fn clears its own host, so this is idempotent).
+// compute the live contract D for the current mode + filters (no drawing).
+//   live + raw feeder rows → re-slice + re-contract client-side (filters active)
+//   live + snapshot/api contract only → use it as-is (no rows to slice)
+//   demo (or nothing resolved) → the frozen grounded SEED
+// STORY contract D is always the full authored window (90d), never filtered — the story
+// prose and charts describe a fixed narrative. All filtering happens in Explore against DX.
+function computeD(){
+  if(curMode==="live" && liveRows)      D = normalize(contractFromRows(liveRows, 90));
+  else if(curMode==="live" && liveData) D = liveData;
+  else                                  D = normalize(SEED);
+}
+function redrawAll(){ drawn = {}; ["kpis","gauge","rail","scatter","cost","trend","kpis2"].forEach(drawFor); }
+function rebuild(){ computeD(); header(); redrawAll(); }
+function applyMode(mode){ curMode = mode; rebuild(); rebuildExplore(); }
+
+// ---- Explore view: condensed chart grid on a live-sliced contract DX ----
+// DX = liveRows sliced by FILTER (live only). In Demo/snapshot there are no raw feeder
+// rows, so DX mirrors the story contract D and the filter bar is greyed (syncFilterBar
+// + the #explore.demo note). No fabricated row-level data.
+let DX = null;
+function computeDX(){
+  if(curMode==="live" && liveRows) DX = normalize(contractFromRows(sliceRows(liveRows), FILTER.days));
+  else                             DX = D;
+}
+function exFacs(){ return (DX.facilities||[]).map(f=>({...f, prev:(f.prev!=null?f.prev:f.value-2.5), region:f.region||"Network"})).sort((a,b)=>b.value-a.value); }
+function drawExTrend(data){
+  const svg=d3.select("#exTrend"); svg.selectAll("*").remove(); ensureDefs(svg);
+  const W=1000,H=300,m={t:16,r:20,b:30,l:48};
+  const x=d3.scaleTime().domain(d3.extent(data,d=>d.date)).range([m.l,W-m.r]);
+  const y=d3.scaleLinear().domain([d3.min(data,d=>d.value)-1.5,d3.max(data,d=>d.value)+1.5]).range([H-m.b,m.t]);
+  const grad=svg.select("defs.shared").append("linearGradient").attr("id","xtg").attr("x1","0").attr("x2","0").attr("y1","0").attr("y2","1");
+  grad.append("stop").attr("offset","0%").attr("stop-color","#8B7BFF").attr("stop-opacity",.38);
+  grad.append("stop").attr("offset","100%").attr("stop-color","#8B7BFF").attr("stop-opacity",0);
+  svg.append("line").attr("x1",m.l).attr("x2",W-m.r).attr("y1",y(65)).attr("y2",y(65)).attr("stroke","#F5B24B").attr("stroke-dasharray","4 4").attr("opacity",.6);
+  svg.append("g").attr("class","axis").attr("transform",`translate(0,${H-m.b})`).call(d3.axisBottom(x).ticks(6).tickFormat(d3.timeFormat("%b %d")));
+  svg.append("g").attr("class","axis").attr("transform",`translate(${m.l},0)`).call(d3.axisLeft(y).ticks(5).tickFormat(d=>d+"%"));
+  const area=d3.area().x(d=>x(d.date)).y0(H-m.b).y1(d=>y(d.value)).curve(d3.curveMonotoneX);
+  const line=d3.line().x(d=>x(d.date)).y(d=>y(d.value)).curve(d3.curveMonotoneX);
+  svg.append("path").attr("d",area(data)).attr("fill","url(#xtg)");
+  const p=svg.append("path").attr("d",line(data)).attr("fill","none").attr("stroke","url(#gg)").attr("stroke-width",3).attr("filter","url(#glow)");
+  const L=p.node().getTotalLength(); p.attr("stroke-dasharray",L).attr("stroke-dashoffset",L).transition().duration(1100).ease(d3.easeCubicInOut).attr("stroke-dashoffset",0);
+  const last=data[data.length-1];
+  svg.append("circle").attr("cx",x(last.date)).attr("cy",y(last.value)).attr("r",5).attr("fill","#F25FD0");
+  svg.append("text").attr("x",x(last.date)-8).attr("y",y(last.value)-10).attr("text-anchor","end").attr("fill","#F25FD0").attr("font-size",13).attr("font-weight",700).text(last.value.toFixed(1)+"%");
+}
+function drawExRail(facs, target){
+  const host=d3.select("#exRail").html("");
+  if(!facs.length){ host.append("div").attr("class","ex-empty").text("No facilities in this slice."); return; }
+  const min=Math.min(target,d3.min(facs,d=>d.value))-3, max=d3.max(facs,d=>d.value)+2;
+  const scale=d3.scaleLinear().domain([min,max]).range([0,100]);
+  const clamp=v=>Math.max(0,Math.min(100,scale(v)));
+  facs.forEach((f,i)=>{
+    const row=host.append("div").attr("class","ex-rail-row");
+    const top=row.append("div").attr("class","rr-top");
+    top.append("span").attr("class","rr-nm").text(f.name);
+    top.append("span").attr("class","rr-val").style("color", f.value>=70?"#F25FD0":(f.value>=target?"#F5B24B":"#5AE0A0")).text(f.value.toFixed(1)+"%");
+    const bar=row.append("div").attr("class","ex-rail-bar");
+    const fill=bar.append("div").attr("class","rr-fill");
+    bar.append("div").attr("class","rr-mark").style("left",clamp(f.prev)+"%");
+    setTimeout(()=>fill.style("width",clamp(f.value)+"%"), 120+i*60);
+  });
+}
+function redrawExplore(){
+  const live=(curMode==="live" && liveRows);
+  document.getElementById("explore").classList.toggle("demo", !live);
+  drawExTrend(DX.trend);
+  drawExRail(exFacs(), (DX.utilization&&DX.utilization.target)||65);
+  drawKpis("#exKpis", DX.kpis);
+  const w=live?FILTER.days:90;
+  const wl=document.getElementById("exWinLab"); if(wl) wl.textContent="· "+w+"D";
+  const nf=(DX.facilities||[]).length, sl=document.getElementById("exSlice");
+  if(sl) sl.innerHTML = live ? (`<b>${nf}</b> facilit${nf===1?"y":"ies"} · <b>${w}</b>-day window`)
+                             : "Demo snapshot — switch to Live to slice";
+}
+function rebuildExplore(){ if(!document.body.classList.contains("exploring")) return; computeDX(); syncFilterBar(); redrawExplore(); }
+function enterExplore(){ document.body.classList.add("exploring"); window.scrollTo(0,0); rebuildExplore(); }
+function exitExplore(){ document.body.classList.remove("exploring"); }
+function toastSave(){ const t=document.getElementById("toast"); if(!t) return;
+  t.classList.add("show"); clearTimeout(window.__toastT); window.__toastT=setTimeout(()=>t.classList.remove("show"),1900); }
+
+// ---- filter bar (WINDOW = segmented buttons; REGION/FACILITY = multi-select dropdowns) ----
+function ddSummary(key){
+  const s = FILTER[key];
+  return (!s || !s.size) ? "All" : (s.size===1 ? Array.from(s)[0] : s.size+" selected");
+}
+// (re)build a dropdown's option list + trigger label. Rebuilding the panel's
+// children does not close it — the `.open` state lives on the parent `.fdd`.
+function buildDropdown(ddSel, values, key){
+  const dd = document.querySelector(ddSel); if(!dd) return;
+  const btn = dd.querySelector(".fdd-btn");
+  btn.firstChild.textContent = ddSummary(key) + " ";   // firstChild = the label text node before the caret
+  const panel = d3.select(ddSel+" .fdd-panel"); panel.html("");
+  const opt = (label,val)=>{
+    const active = (val===null) ? !FILTER[key] : !!(FILTER[key]&&FILTER[key].has(val));
+    const row = panel.append("div").attr("class","fopt"+(active?" on":""));
+    row.append("span").attr("class","box").text(active?"✓":"");
+    row.append("span").text(label);
+    row.on("click",(ev)=>{ ev.stopPropagation();      // keep panel open on toggle
+      if(val===null){ FILTER[key]=null; }
+      else{ const cur=FILTER[key]?new Set(FILTER[key]):new Set();
+        cur.has(val)?cur.delete(val):cur.add(val); FILTER[key]=cur.size?cur:null; }
+      rebuildExplore();
+    });
+  };
+  opt("All", null);
+  values.forEach(v=> opt(v, v));
+  if(!btn.__bound){ btn.__bound=true;
+    btn.addEventListener("click",(e)=>{ e.stopPropagation();
+      document.querySelectorAll(".fdd.open").forEach(o=>{ if(o!==dd) o.classList.remove("open"); });
+      dd.classList.toggle("open");
+    });
+    dd.querySelector(".fdd-panel").addEventListener("click",e=> e.stopPropagation());  // clicks on padding/scrollbar don't close
+  }
+}
+function syncFilterBar(){
+  const enabled = !!(curMode==="live" && liveRows);
+  const bar=document.getElementById("fbar"); if(bar) bar.classList.toggle("off", !enabled);
+  if(!enabled) document.querySelectorAll(".fdd.open").forEach(o=> o.classList.remove("open"));
+  document.querySelectorAll("#fWindow button").forEach(b=> b.classList.toggle("on", +b.dataset.days===FILTER.days));
+  if(liveRows){
+    buildDropdown("#ddRegions",    Array.from(new Set(liveRows.map(regOfRow))).sort(), "regions");
+    buildDropdown("#ddFacilities", Array.from(new Set(liveRows.map(r=>r.facility))).sort(),           "facilities");
+  }
+}
+function bindFilterBar(){
+  document.querySelectorAll("#fWindow button").forEach(b=> b.addEventListener("click",()=>{
+    if(b.classList.contains("on")) return; FILTER.days=+b.dataset.days; rebuildExplore();
+  }));
+  document.addEventListener("click",()=> document.querySelectorAll(".fdd.open").forEach(o=> o.classList.remove("open")));
+}
+async function boot(){
+  injectGlobalDefs();
+  liveData = await resolveLive();    // sets liveRows as a side-effect when the feeder read succeeds
+  curMode  = "live";
+  computeD();                        // D from live rows if present, else snapshot/seed
+  syncFilterBar();
+  header();
+  bindFilterBar();
+  setup();   // binds listeners + lazy scroll-reveal draws (first paint stays animated)
+  watchLiveFilters();
+}
+// Re-fetch liveData whenever the feeder worksheet's filters change (e.g. a
+// relative-date window filter), instead of trusting the one-time snapshot from
+// boot(). Without this, the tile goes stale if the workbook's filter changes
+// without the dashboard being reopened.
+function watchLiveFilters(){
+  if(!(window.tableau && tableau.extensions && tableau.extensions.dashboardContent)) return;
+  try{
+    const dash=tableau.extensions.dashboardContent.dashboard;
+    const ws=dash.worksheets.find(w=>WS_NAMES.includes(w.name)) || dash.worksheets.find(w=>/feed/i.test(w.name));
+    if(!ws) return;
+    ws.addEventListener(tableau.TableauEventType.FilterChanged, async ()=>{
+      const fresh=await resolveLive();
+      if(fresh){ liveData=fresh; if(curMode==="live") rebuild(); rebuildExplore(); }
+    });
+  }catch(e){ console.warn("watchLiveFilters failed",e); }
+}
+boot();
+</script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest manifest-version="0.1" xmlns="http://www.tableau.com/xml/extension_manifest">
+  <dashboard-extension id="com.example.scrollytelling.cfo-brief" extension-version="1.0.0">
+    <default-locale>en_US</default-locale>
+    <name resource-id="name"/>
+    <description>EXAMPLE — edit for the new story. "The Quiet Erosion" CFO margin brief. Self-contained D3 scrollytelling story of revenue-up / margin-down.</description>
+    <author name="REPLACE_ME" email="replace@example.com" organization="REPLACE_ME" website="https://example.com"/>
+    <min-api-version>1.1</min-api-version>
+    <source-location>
+      <url>https://REPLACE_ME_WITH_HOST_URL/cfo/</url>
+    </source-location>
+    <icon>iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAIAAADajyQQAAAAWUlEQVR42u3PAQ0AAAgDoFvaohYyh46NAqR6XoqYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiY2FUL+LocB0Nd/2MAAAAASUVORK5CYII=</icon>
+  </dashboard-extension>
+  <resources>
+    <resource id="name">
+      <text locale="en_US">REPLACE_ME — CFO Margin Brief</text>
+    </resource>
+  </resources>
+</manifest>

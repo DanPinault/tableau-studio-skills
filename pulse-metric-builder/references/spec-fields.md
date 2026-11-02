@@ -24,7 +24,9 @@ Determine these from the metric first; use the default only when you can't, and
 list each one you assumed in the plan. Don't ask the user unless they raise it.
 
 **Keyword lookup (use this before the table below).** Match case-insensitively
-against the measure's caption, whole words or word stems. Check the rows in order
+against the measure's caption. A keyword matches a word that equals it or starts
+with it ("returns" matches return; "calculated" does not match late, because the
+keyword must be at the start of the word). Check the rows in order
 and stop at the first match:
 
 | Order | If the caption contains | sentiment | format |
@@ -93,12 +95,36 @@ State each choice in the plan so the user can override it.
 3. Fewer than one left → stop and tell the user; Pulse needs at least one (see
    api-notes).
 
+**Assumptions note in the plan** (always this form, first line of the Notes): "Assumed:
+sentiment <Up is good | Down is good | Neutral>, format <format>, period <period in
+words>." List only the values you assumed, not ones the user gave. Nothing else on
+that line.
+
+**Other definitions on the data source:** say nothing about definitions you aren't
+creating or changing. The only definition remark allowed in the plan is the warning
+that the data source has none yet (Step 4).
+
+**Currency:** when `format` is CURRENCY, always put `"currency": "USD"` in the spec
+(unless the user names another) and show the plan's format as "Currency (USD)", or
+the code they named.
+
+**Filter-dimension note in the plan** (always this wording): "Filter dimensions are
+the first three text fields in the data source, skipping IDs, keys, codes, contact
+details and places such as city or postal code."
+
 **Metric name** (the user's own name always wins)
-`<data source name> <label>` where the label is the measure caption, with a prefix
+`<data source name> <label>` where the data source name is exactly the name
+`datasources` returns (keep underscores and suffixes; never shorten it) and the label is the measure caption, with a prefix
 or suffix by aggregation: SUM and USER → none; AVERAGE → "Average" before it;
 COUNT → "Count" after it; COUNT_DISTINCT → "Distinct" before it; MIN or MAX →
 "Minimum" or "Maximum" before it. With one filter, add " - <filter value>" at the
-end. Example: `Superstore Average Sales`.
+end. Example: for a data source named `Superstore_orders`, AVERAGE of Sales is
+`Superstore_orders Average Sales`.
+
+**Time-field note in the plan** (always this wording, filling in the names): "Time
+field: <chosen field>. Other date fields: <the rest, comma-separated, in the order
+`fields` lists them, or none>. It
+can't be changed later without deleting and recreating the metric."
 
 ## More locked choices
 

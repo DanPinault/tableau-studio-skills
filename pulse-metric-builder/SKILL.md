@@ -5,30 +5,6 @@ description: Use when the user wants to create, list, rename, or delete Tableau 
 
 # Pulse metric builder
 
-## Update check (run before everything else, including Step 0)
-
-Before anything else, run:
-
-```
-python3 "<this skill folder>/scripts/check_update.py" check
-```
-
-It prints JSON and never fails. Read `status`:
-
-- `up_to_date`, `unknown` (offline) or `snoozed`: say nothing about updates and continue.
-- `update_available`: stop and tell the user a newer version of this skill is
-  available (`local` → `remote`), with a one-line summary of `changes`. Ask which
-  they want, as plain text at the end of your message (do not use `ask-user`):
-  **install now**, **skip this time**, or **don't remind me about this version**.
-  Wait for the answer.
-  - Install: run `python3 "<this skill folder>/scripts/check_update.py" apply`.
-    On `ok: true`, tell them it updated (the old copy is saved at `backup`), ask
-    them to run `/reload-skills`, then re-send their request so the new version
-    runs. Stop there. On `ok: false`, show the error and continue with the
-    current version.
-  - Skip: continue the task.
-  - Don't remind me: run `... check_update.py snooze`, then continue.
-
 Create Tableau Pulse metric definitions (and a metric for a chosen period) on a
 published data source, then hand back what's needed to show each one as a Pulse
 card on a Studio dashboard.
@@ -101,21 +77,25 @@ Cards on a dashboard stay here (Step 5). The metric's name, link and
 
 ## Step 0 — Introduce yourself, then ask the prompting level (every run, before anything else)
 
-First, in two or three plain sentences, tell the user what you are and what you'll
-do: you create Tableau Pulse metrics on a published data source, can place them
-as Pulse cards on a dashboard, and will show a plan for approval before creating
-anything. No tool or script names. Say it once per session.
+Your first reply to a Pulse request starts with this introduction, word for word
+(no tool or script names), even if you answered other questions earlier in the
+session. Skip it only if you already gave it earlier in this same chat:
+
+> I'm the Pulse metric builder. I create Tableau Pulse metrics on a published data source, can place them as Pulse cards on a dashboard, and will show you a plan to approve before I create anything.
 
 Then, in the same message, ask how much guidance they want, offering exactly two
 options (skip the question if they already said "short" or "verbose"):
 
-1. **Short** — only ask for what's required, state assumptions in one line, and
-   proceed. Minimal explanation.
-2. **Verbose** — explain each step, why you're asking each question, and the
-   options and tradeoffs (time field, period, filters, card placement) before
-   proceeding.
+1. **Short**: I only ask for what's required, state my assumptions in one line, and proceed.
+2. **Verbose**: I explain each step and the tradeoffs (time field, period, filters, card placement) before proceeding.
 
-End that same message with one optional line, using these words exactly, with the
+Use those two lines word for word. After them come the checklist line (below), and
+last: Reply with 1 or 2 and I'll start on <the user's request in a few words>.
+
+(Short means minimal explanation; verbose means explaining each step, why you ask
+each question, and the options and tradeoffs.)
+
+Put one optional line before that last line, using these words exactly, with the
 word checklist in bold: I can also show a quick **checklist** of what you need
 before we start. Say 'checklist' if you want it.
 Show `references/before-you-begin.md` only if they ask; never unprompted, never a
@@ -262,6 +242,15 @@ save it (the save prompt is in that file); never choose a location.
     the allowed Action or Status words per row, the exact closing line, and no
     script, command or tool names.
 
+## Clean stop
+
+If the user says "stop" (or anything that means stop) before a create, reply with
+exactly: Stopped. Nothing was created in Pulse and your workbook is unchanged. Tell
+me when you want to pick this up again.
+Add nothing after it: no file names, paths or offers. If something was already
+created, replace the first two sentences with what was created (names), then the
+last sentence. Then run the update check below.
+
 ## Recovery
 
 | Symptom | Fix |
@@ -279,3 +268,27 @@ save it (the save prompt is in that file); never choose a location.
 | 409 | Duplicate name or duplicate ds/measure/aggregation/filters (the time field doesn't count; to change it, delete and recreate) |
 | Blank metric or card (`value` returns no summary) | Data ends before the period → use `ytd` or `use_latest_data: true`; or an aggregate calc set to SUM instead of `USER` (api-notes) |
 | Desktop-side failure while placing cards (apply rejected, dialog open, data source not connected) | See "If something fails" in `references/placing-cards.md` |
+
+## Update check (run last, after your final message or a clean stop)
+
+Never run this before or during Steps 0 to 5, so it can't delay the introduction
+or the sign-in check. After the final message of the task (or a clean stop), run:
+
+```
+python3 "<this skill folder>/scripts/check_update.py" check
+```
+
+It prints JSON and never fails. Read `status`:
+
+- `up_to_date`, `unknown` (offline) or `snoozed`: say nothing about updates.
+- `update_available`: tell the user a newer version of this skill is available
+  (`local` → `remote`), with a one-line summary of `changes`. Ask which they
+  want, as plain text at the end of your message (do not use `ask-user`):
+  **install now**, **skip this time**, or **don't remind me about this version**.
+  Wait for the answer.
+  - Install: run `python3 "<this skill folder>/scripts/check_update.py" apply`.
+    On `ok: true`, tell them it updated (the old copy is saved at `backup`) and
+    ask them to run `/reload-skills`. On `ok: false`, show the error and keep
+    the current version.
+  - Skip: say nothing more.
+  - Don't remind me: run `... check_update.py snooze`.

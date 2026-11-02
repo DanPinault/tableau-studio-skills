@@ -3,6 +3,52 @@
 The current version is in the `VERSION` file. The skill offers to update itself
 when launched; or replace this folder with the newer one and run `/reload-skills`.
 
+## 1.2.4 — 2026-11-02
+
+- Tested 1.2.3 with two fresh chats on Profit: introduction, options, name,
+  columns, currency code, date-field order, filter note, closing line and stop
+  sentence all matched.
+- Fixed the two remaining differences: the assumptions line in the plan is now
+  fixed wording, and the plan never remarks on other definitions (only the
+  "none yet" warning is allowed). The stop reply now adds nothing after the
+  fixed sentence (a run had added a note about a temp file).
+
+## 1.2.3 — 2026-11-02
+
+- Found on a Profit run: the order of "Other date fields" varied, and the plan
+  showed "Currency" without the code. Other date fields now follow the order the
+  field list gives; CURRENCY always carries a currency code (USD by default) and
+  the plan shows "Currency (USD)".
+- The introduction is given on the first reply to a Pulse request even when the
+  chat had earlier answers, and skipped only if already given in the same chat.
+
+## 1.2.2 — 2026-11-02
+
+- The reply to "stop" before a create and the filter-dimension note in the plan
+  are now fixed wording (each was worded differently in every test run).
+- Tested after 1.2.1: the metric name, time-field note, introduction and options
+  matched on a fresh chat. A second run landed on a different data source with
+  no Sales field and correctly declined to substitute one.
+
+## 1.2.1 — 2026-11-02
+
+- Found in a fresh-chat pair: the metric name differed (`Superstore_orders Sales`
+  vs `Superstore Sales`) and the time-field note contradicted itself. The data
+  source name is now used exactly as returned (the example was misleading), and
+  the time-field note has fixed wording.
+- The Short and Verbose option lines and the order of the last lines of the
+  Step 0 message are now fixed wording.
+
+## 1.2.0 — 2026-11-02
+
+- The update check now runs last, after the final message or a clean stop, so it
+  can no longer conflict with the introduction in Step 0 or delay the sign-in
+  check.
+- The Step 0 introduction is now fixed wording, so two runs open the same way.
+- Keyword matching for sentiment and format is exact: a keyword matches a word
+  that equals it or starts with it.
+- Not yet retested after these edits.
+
 ## 1.1.1 — 2026-11-02
 
 - Description now says that other dashboard extensions are not this skill.

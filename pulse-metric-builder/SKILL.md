@@ -1,6 +1,6 @@
 ---
 name: pulse-metric-builder
-description: Use when the user wants to create, list, rename, or delete Tableau Pulse metrics or metric definitions on a published data source — phrases like "create a Pulse metric", "build Pulse metrics for this data source", "add a Pulse definition for Revenue", "set up Pulse KPIs", or "put Pulse cards on my dashboard". Creates definitions and metrics through the Pulse REST API with a bundled script (the agent's web tools can read Pulse but can't create it), then outputs the settings for Studio's Pulse Metric dashboard object. Do NOT use to answer a question about an existing metric's value, trend, or drivers (use the insights skill), or for regular worksheets, calculated fields and dashboards with no Pulse ask (use tableau-desktop-authoring).
+description: Use when the user wants to create, list, rename, or delete Tableau Pulse metrics or metric definitions on a published data source — phrases like "create a Pulse metric", "build Pulse metrics for this data source", "add a Pulse definition for Revenue", "set up Pulse KPIs", or "put Pulse cards on my dashboard". Creates definitions and metrics through the Pulse REST API with a bundled script (the agent's web tools can read Pulse but can't create it), then outputs the settings for Studio's Pulse Metric dashboard object. Do NOT use to answer a question about an existing metric's value, trend, or drivers (use the insights skill), or for regular worksheets, calculated fields and dashboards with no Pulse ask (use tableau-desktop-authoring). Placing Pulse cards stays with this skill; adding or building any other dashboard extension (an installed or custom one) is not this skill (use dashboard-builder or author-extension).
 ---
 
 # Pulse metric builder
@@ -257,6 +257,10 @@ save it (the save prompt is in that file); never choose a location.
     summary or notes.
 11. Don't create anything beyond the approved plan (for example an extra period
     metric after a blank result); offer it and wait for a yes.
+12. Don't send a plan or report without the pre-send check in
+    `references/output-formats.md` ("Check before sending"): exact columns, one of
+    the allowed Action or Status words per row, the exact closing line, and no
+    script, command or tool names.
 
 ## Recovery
 

@@ -25,7 +25,9 @@ below.
    (Step 3). Use the published data source's version of the calc, not a
    workbook-only calc, because Pulse can only see fields in the published data
    source.
-6. Offer at most five suggestions. The user can ask for more.
+6. Offer at most five suggestions. The user can ask for more. Order them by the
+   number of sheets that chart the measure, most first; break ties by the order
+   `fields` lists them.
 
 If the workbook has no sheets yet, suggest from `fields` alone: the numeric
 measures first, in the order `fields` lists them.

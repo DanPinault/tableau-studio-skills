@@ -23,6 +23,20 @@ suggestion from the fields list:
 Determine these from the metric first; use the default only when you can't, and
 list each one you assumed in the plan. Don't ask the user unless they raise it.
 
+**Keyword lookup (use this before the table below).** Match case-insensitively
+against the measure's caption, whole words or word stems. Check the rows in order
+and stop at the first match:
+
+| Order | If the caption contains | sentiment | format |
+|---|---|---|---|
+| 1 | cost, expense, return, churn, defect, refund, loss, delay, late, error, complaint | DOWN | CURRENCY if it also contains cost, expense, refund or loss; otherwise NUMBER |
+| 2 | ratio, rate, margin, percent, %, share, pct | UP (DOWN if row 1 also matched) | PERCENT |
+| 3 | sales, revenue, profit, income, order, quantity, units, bookings, volume | UP | CURRENCY if it contains sales, revenue, profit, income or bookings; otherwise NUMBER |
+| 4 | no match | NONE | NUMBER |
+
+If the caption contains both a row 1 and a row 3 word (for example "Cost of
+Sales"), row 1 wins.
+
 | key | infer when | otherwise |
 |---|---|---|
 | `sentiment` | the measure is clearly good-up (sales, profit, revenue, orders) → UP; clearly good-down (cost, returns, churn, defects) → DOWN | NONE (neutral) |

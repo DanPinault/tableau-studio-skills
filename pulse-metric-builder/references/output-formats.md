@@ -57,3 +57,16 @@ Under the table, a `Notes` list, one line each, omitted if empty:
 
 End with exactly one next step: place the metrics as cards on a dashboard (Step 5),
 fix the failed ones, or nothing further.
+
+## Check before sending (plan and report)
+
+Run this on every plan and report, in both short and verbose mode:
+1. The table has exactly the columns above, in that order, one row per metric.
+2. Each row's Action is `Create`, `Reuse` or `Blocked` (plan), or its Status is
+   `Created`, `Reused` or `Failed` (report). No other words.
+3. The plan ends with the exact closing line above, on its own final line.
+   The report ends with exactly one next step.
+4. Every assumed default, the time field chosen and any aggregate calc appear in
+   Notes.
+5. No script, command, tool or skill names, and no raw IDs except the link.
+Fix any miss before sending; don't mention the check.

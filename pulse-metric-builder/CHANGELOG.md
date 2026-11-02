@@ -3,6 +3,15 @@
 The current version is in the `VERSION` file. The skill offers to update itself
 when launched; or replace this folder with the newer one and run `/reload-skills`.
 
+## 1.1.1 — 2026-11-02
+
+- Description now says that other dashboard extensions are not this skill.
+- New pre-send check for plans and reports, and a "Common mistakes" item for it.
+- Sentiment and format now come from a fixed keyword table, so two runs choose
+  the same values.
+- Measure suggestions are ordered by how many sheets chart each measure.
+- Safer unpacking in the update script (`scripts/check_update.py`).
+
 ## 1.1.0 — 2026-11-02
 
 Update check on launch: the skill now checks the DanPinault/tableau-studio-skills

@@ -27,6 +27,10 @@ If the skills folder already has skills in it, clone to a temporary folder inste
 
 ## Update
 
+**Automatic (per skill).** `pulse-metric-builder`, `publish-packaged-extension` and `scrollytelling-demo-builder` check this repo for a newer version every time they are launched. If one is available, the skill shows what changed and asks whether to install it, skip it this time, or stop reminding you about that version. Installing replaces only that skill's folder (your old copy is saved in `~/.tableau-studio-skills-backups/`); run `/reload-skills` afterwards. Offline, the check is silently skipped.
+
+**Manual (all skills at once).**
+
 ```bash
 cd "$HOME/Documents/My Tableau Repository (Beta)/Tableau Agent/skills" && git pull
 ```

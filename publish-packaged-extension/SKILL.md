@@ -5,6 +5,30 @@ description: Use when the user wants to publish a workbook to Tableau Cloud or T
 
 # Packaged extension publish
 
+## Update check (run before everything else, including Step 0)
+
+Before anything else, run:
+
+```
+python3 "<this skill folder>/scripts/check_update.py" check
+```
+
+It prints JSON and never fails. Read `status`:
+
+- `up_to_date`, `unknown` (offline) or `snoozed`: say nothing about updates and continue.
+- `update_available`: stop and tell the user a newer version of this skill is
+  available (`local` → `remote`), with a one-line summary of `changes`. Ask which
+  they want, as plain text at the end of your message (do not use `ask-user`):
+  **install now**, **skip this time**, or **don't remind me about this version**.
+  Wait for the answer.
+  - Install: run `python3 "<this skill folder>/scripts/check_update.py" apply`.
+    On `ok: true`, tell them it updated (the old copy is saved at `backup`), ask
+    them to run `/reload-skills`, then re-send their request so the new version
+    runs. Stop there. On `ok: false`, show the error and continue with the
+    current version.
+  - Skip: continue the task.
+  - Don't remind me: run `... check_update.py snooze`, then continue.
+
 This is a Tableau Studio agent skill. It runs inside Studio's agent and
 publishes through Studio's `tableau-web` MCP, which uses Studio's own sign-in
 to the connected Tableau site (Tableau Cloud or Tableau Server).

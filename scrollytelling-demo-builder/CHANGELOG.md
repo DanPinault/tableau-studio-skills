@@ -1,7 +1,14 @@
 # Changelog
 
-The current version is in the `VERSION` file. To update, replace your copy of
-this folder with the newer one and run `/reload-skills`.
+The current version is in the `VERSION` file. The skill offers to update itself
+when launched; or replace this folder with the newer one and run `/reload-skills`.
+
+## 1.2.0 — 2026-11-02
+
+Update check on launch: the skill now checks the DanPinault/tableau-studio-skills
+repository for a newer version before doing anything else, and offers to
+install it (old copy is backed up), skip it, or stop reminding for that
+version. Works offline (silently skipped). Adds `scripts/check_update.py`.
 
 ## 1.1.0 — 2026-11-02
 

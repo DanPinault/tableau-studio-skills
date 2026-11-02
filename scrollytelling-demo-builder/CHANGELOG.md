@@ -3,6 +3,13 @@
 The current version is in the `VERSION` file. The skill offers to update itself
 when launched; or replace this folder with the newer one and run `/reload-skills`.
 
+## 1.3.3 — 2026-11-02
+
+- New `scripts/check_story.py`: pre-delivery check on the built page. Static checks
+  (no external scripts, no secrets, chapters, prose spans, query window filter and
+  aliases) plus a headless Chrome/Edge render that checks every chapter for
+  placeholder text, empty spans, thin chapters and missing charts. Now gate item 0.
+
 ## 1.3.2 — 2026-11-02
 
 From a full 1.3.1 run through publish (worked end to end; live numbers verified).

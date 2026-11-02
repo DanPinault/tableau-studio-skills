@@ -205,6 +205,12 @@ Never show tool names, script names or JSON to the user; describe outcomes inste
 
 ## Pre-delivery gate (run before saying Done)
 
+0. Run `python3 -I "<this skill folder>/scripts/check_story.py" <built story.html> --query <q.json>`
+   (omit `--query` in hosted mode) on the built page before packaging. Every check
+   must pass; it renders all chapters headless, so a blank or broken later chapter
+   fails here instead of reaching the user. Fix and re-run on a failure. If it
+   reports no Chrome or Edge, say the render check was skipped. Never show its
+   output; report only the result in plain words.
 1. 0 external `<script src>` and no secrets in the built HTML.
 2. Every number on the page traces to a queried row; `SEED` equals the real rows.
 3. Demo and Live agree, in charts AND `[data-v]` prose.

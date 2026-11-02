@@ -3,6 +3,11 @@
 The current version is in the `VERSION` file. The skill offers to update itself
 when launched; or replace this folder with the newer one and run `/reload-skills`.
 
+## 1.2.1 — 2026-11-02
+
+- Safer unpacking in the update script (`scripts/check_update.py`). No change in
+  behavior.
+
 ## 1.2.0 — 2026-11-02
 
 Update check on launch: the skill now checks the DanPinault/tableau-studio-skills

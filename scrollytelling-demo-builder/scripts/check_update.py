@@ -127,7 +127,10 @@ def get_new_copy(tmp):
                 # refuse anything that could escape the temp folder
                 if m.islnk() or m.issym() or ".." in parts or Path(m.name).is_absolute():
                     raise RuntimeError(f"unsafe path in archive: {m.name}")
-                tf.extract(m, tmp)
+                if hasattr(tarfile, "data_filter"):  # Python 3.12+ (and patched 3.9-3.11)
+                    tf.extract(m, tmp, filter="data")
+                else:
+                    tf.extract(m, tmp)
         if prefix is None:
             raise RuntimeError(f"{SKILL} not found in the repository")
     return tmp / prefix / SKILL

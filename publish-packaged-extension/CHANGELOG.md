@@ -3,6 +3,23 @@
 The current version is in the `VERSION` file. The skill offers to update itself
 when launched; or replace this folder with the newer one and run `/reload-skills`.
 
+## 1.2.3 — 2026-11-02
+
+- The sentence that opens the project question (after the fix step) and the
+  reply to "stop" are now fixed wording, so two runs read the same: the fix
+  result always names the extension zones and package IDs, and the stop reply
+  asks about deleting the fixed-for-publish copy once.
+
+## 1.2.2 — 2026-11-02
+
+- Fixed rule for telling Tableau Cloud from Tableau Server: a host that is or
+  ends with `.online.tableau.com` is Cloud, any other host is treated as Server
+  (the user can say it is Cloud), and with no link seen yet it assumes Cloud
+  and decides again when a link appears.
+- Fixed project matching: whole name only, one leading dot ignored. One match
+  becomes the default (with its parent shown); two or more are listed with
+  their parents and the user chooses.
+
 ## 1.2.1 — 2026-11-02
 
 - Safer unpacking in the update script (`scripts/check_update.py`).

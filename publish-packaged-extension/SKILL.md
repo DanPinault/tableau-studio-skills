@@ -57,12 +57,18 @@ Out of scope, and what to do instead:
 - Tableau Server: the publish steps work on whichever site the connected
   `tableau-web` tools reach, so a workbook without a packaged extension is
   published the same way (step 3 branch, then the step 4 question). Packaged
-  extensions are a Tableau Cloud beta. If the workbook has one and the
-  connected site looks like Tableau Server (its links don't use
-  `online.tableau.com`; if you can't tell, ask), say the extension won't work
-  there and ask whether to publish the original export as-is. Never publish the
-  fixed-for-publish copy to Tableau Server. Publishing to Tableau Server hasn't
-  been tested.
+  extensions are a Tableau Cloud beta. Decide Cloud or Server with this rule,
+  using the host of any workbook, project or view link you have seen:
+  1. The host is `online.tableau.com` or ends with `.online.tableau.com`
+     (for example `us-east-1.online.tableau.com`): Tableau Cloud.
+  2. Any other host: treat it as Tableau Server and say which host you saw. If
+     the user says it is Tableau Cloud, believe them and go on as Cloud.
+  3. No link seen yet: assume Cloud, and decide again as soon as a link
+     appears (the step 5 publish result has one). Don't ask.
+  If the workbook has a packaged extension and the site is Tableau Server, say
+  the extension won't work there and ask whether to publish the original export
+  as-is. Never publish the fixed-for-publish copy to Tableau Server. Publishing
+  to Tableau Server hasn't been tested.
 - Another site than the one Studio is signed in to: tell the user to switch
   sites in Studio, then ask again.
 - Building or editing the extension: hand off to author-extension or
@@ -163,6 +169,13 @@ which case the original Studio file is needed.
 If there are `warnings`, tell the user each one briefly and carry on. A secret
 warning matters most: anyone who can download the workbook can read that value.
 
+Start the step 4 message with exactly one of these sentences, filling only the
+angle-bracket parts, with nothing before it:
+
+> I made a fixed-for-publish copy of <workbook name>: <n> extension zones, package <package IDs, comma-separated>, <no problems or warnings | each warning in a few words>. Nothing is published yet.
+
+> <workbook name> has no packaged extension, so there's nothing to fix. I can publish the plain export as it is. Nothing is published yet.
+
 ### 4. Ask for the site, project and workbook name
 
 Publishing is visible to others on the site, so always ask the user for all
@@ -210,12 +223,15 @@ project names on separate lines, in sorted order:
   They're only the projects the user can publish to. Never show the IDs. Use
   the chosen project's ID in step 5. If they name a project that isn't in the
   list, tell them they can't publish there, and ask again. Match names
-  case-insensitively and ignore a leading dot (`Dan` matches `.Dan`). If more
-  than one project matches, or the match is a nested project, show each
-  match with its parent project's name and ask which one; never pick for
-  them. Offer **Personal
-  Space** only if `publish-workbook` lets you omit `projectId`. Some versions
-  require it.
+  case-insensitively and ignore one leading dot (`Dan` matches `.Dan`). Match
+  the whole name, never part of it (`Sales` doesn't match `Sales Demo`).
+  - Exactly one match: use it as the project default, and show "(in <parent>)"
+    if it is nested. Don't ask which one.
+  - Two or more matches: list them, one per line, as "<name> (in <parent>)" or
+    "<name> (top level)", and ask which one. Never pick for them. If they
+    already named a parent ("Samples in Demos"), use it to choose.
+  - Offer **Personal Space** only if `publish-workbook` lets you omit
+    `projectId`. Some versions require it.
 - **Workbook name.** Suggest the workbook's name without `.fixed-for-publish`. This is
   the name it gets on the site, so any name the user gives is fine. The local
   file name doesn't change.
@@ -364,7 +380,8 @@ anything older than 2026.3 as the likely cause.
 
 Run this on the step 4 question and on the final message, silently, before you
 send either:
-1. The step 4 question follows the step 4 template: site, name, project, then
+1. The step 4 message starts with one of the two step 3 sentences, then the
+   question follows the step 4 template: site, name, project, then
    (with no project default) every project from step 1 on its own line, sorted
    by the rule above, with the total and "(in <parent>)" on nested ones. With
    no project default it says "Reply with a project", not "Reply yes".
@@ -377,8 +394,12 @@ Fix any miss before sending; don't mention the check.
 ## Clean up
 
 If the user stops before publishing (for example, replies "stop" at the step 4
-question), end with one line: nothing was published, and offer to delete the
-`.fixed-for-publish.twbx`. Don't list the original export as deletable.
+question), end with exactly this, and ask about deleting only once:
+
+> Stopped. Nothing was published. Say "delete" to remove <name>.fixed-for-publish.twbx.
+
+If no fixed-for-publish copy was made, end with "Stopped. Nothing was
+published." and nothing more. Don't list the original export as deletable.
 
 After step 6, offer to delete the local `.fixed-for-publish.twbx` and `server-copy.twbx`.
 Both can contain secret-looking values the script warned about. Delete them

@@ -3,6 +3,40 @@
 The current version is in the `VERSION` file. The skill offers to update itself
 when launched; or replace this folder with the newer one and run `/reload-skills`.
 
+## 1.3.8 — 2026-11-02
+
+From a 1.3.7 run (outline, datasource question, proposal and verdicts all matched
+the pinned wording and the earlier run's numbers).
+
+- The stop reply is the final message: nothing after it when the update check has
+  nothing to report, and never twice (it printed twice in two runs).
+
+## 1.3.7 — 2026-11-02
+
+From a 1.3.6 run (yearly verdicts, 4 qualifying measures, 6 chapters, pinned
+stop all worked; four details drifted).
+
+- The datasource question moved into Step 0 (item 7): the agent asked it before
+  reading the procedure, so the 1.3.6 wording in the procedure was never used.
+- The outline is now word for word, including its lead-in.
+- Proposal: "Checklist" and "Caveats" headings, a one-line Grain, and the window
+  question pinned word for word.
+- Percent and rate fields (Discount) use the plain mean of per-period AVG values,
+  never weighted by row counts (runs gave -34% and -25%).
+
+## 1.3.6 — 2026-11-02
+
+From a 1.3.5 run (proposal shape matched; three details differed).
+
+- With no move start, the yearly comparison now decides every verdict (first-14 is
+  reference only), so a measure like Profit Ratio (+23% a year, -2.5% first-14) is
+  no longer shown as "noise" next to a qualifying yearly change. Measures are
+  ranked by absolute yearly change; that order sets the lead signal, table rows
+  and chapters. Superstore now gives 4 qualifying measures and 6 chapters.
+- Datasource question: exactly six names, A to Z, numbered, with no suggestions or
+  remarks (the old "first six as returned" order changed between runs and made "1"
+  pick a different datasource).
+
 ## 1.3.5 — 2026-11-02
 
 Re-graded 81.1 (B-, stricter pass than the earlier 85.1; not comparable).

@@ -28,12 +28,8 @@ feeder sheet.
 
 ## 1. Connect the published datasource — [needs you]
 
-Ask which published datasource to use, with this wording and nothing else
-(the audience was already asked in Step 0, so do not ask it here):
-
-> Which published datasource should the story use? Here are the first six on your site:
-> <up to six names, one per line, in the order the site returns them>
-> Or name any other one.
+The datasource question is pinned in `SKILL.md` Step 0 item 7 and was already
+asked; do not ask it again or ask the audience here.
 
 Connecting/authorizing is their action (sign-in, credential, or selecting it in
 Studio). Confirm you can query it
@@ -119,6 +115,9 @@ action triggers corruption if it recurs, instead of losing the whole dashboard.
     other falls more than 5% over the same window. Test every pair of numeric
     measures (a pair counts as related when both are in the same datasource) and
     list each pair that diverges, with both changes.
+  - **Percent and rate fields** (such as Discount) use the field's per-period
+    AVG as the datasource returns it, then the plain mean of those per-period
+    values across the block; never weight by row counts.
   - **Measures probed:** count every numeric measure the datasource lists,
     including calculated ratio measures (computed as the sum of the numerator over
     the sum of the denominator over the whole 14-period block; never the average
@@ -181,13 +180,17 @@ action triggers corruption if it recurs, instead of losing the whole dashboard.
   3b. No move start: the window is the full history. Say it is a steady change
      with no step, and note that comparing the first 14 and last 14 periods can be
      partly seasonal. The window is still confirmed with the user.
-     Seasonality check (only here): for every measure that qualified, also
-     compare its average per period in the first full calendar year with the
-     last full calendar year, using the same thresholds. A measure that
-     qualifies on first-14 vs last-14 but not on the yearly comparison is
-     "noise (seasonal)", and it cannot be the lead signal or the basis of a
-     divergence. Lead signal and chapters are then chosen from what remains,
-     before the proposal, so the proposal and the build tell the same story.
+     Yearly comparison (only here): for EVERY measure, compare its value per
+     period in the first full calendar year with the last full calendar year
+     (ratios as sum over sum within each year), using the same thresholds. When
+     this step ran, the yearly comparison decides the verdict, because first-14
+     vs last-14 is partly seasonal; the first-14 column is shown for reference
+     only. A measure that qualifies on the yearly comparison is "qualifies" even
+     if first-14 shows noise; one that qualifies only on first-14 is "noise". The
+     lead signal, any divergence and the chapters are chosen from the yearly
+     results, before the proposal, so the proposal and the build tell the same
+     story. Rank measures by absolute yearly change, largest first: that order
+     sets the lead signal, the table rows and the chapter order.
   4. Never widen the window past 3 times the length of that move. If the full
      history is shorter than 14 periods, use it and say so.
   5. If no signal meets the locked thresholds over this window, treat it as
@@ -240,7 +243,7 @@ action triggers corruption if it recurs, instead of losing the whole dashboard.
   actions). If persona/tone matters to the demo, [needs you] to confirm.
 - **Locked chapter count (default; the user can override, and you must name the
   default you used).**
-  - One chapter per qualifying measure after the seasonality check (a measure
+  - One chapter per qualifying measure after the yearly comparison (a measure
     that qualifies is one signal, even when it moves with another; never merge
     measures to shorten the story). Chapters = qualifying measures + 2, then
     clamped to 3 to 6. The audience does not change this number; it only changes

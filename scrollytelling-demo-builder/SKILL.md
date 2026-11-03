@@ -29,7 +29,7 @@ from **two COO/CFO keynote-extension templates vendored inside this skill**
 
 ## Step 0 — Orient the user first (mandatory, before any building)
 
-Do these six things, in order, before touching data or files.
+Do these seven things, in order, before touching data or files.
 
 **Every Step 0 question must be visible in chat.** The `ask-user` prompt does
 not render for the user, and text written before a tool call in the same turn is
@@ -58,12 +58,16 @@ question to the user follows the same rule.
    Record the choice.
 
 3. **Give the high-level outline** for the chosen mode, flagging every likely
-   user touchpoint with **[needs you]**.
+   user touchpoint with **[needs you]**. Word for word, never paraphrased: the
+   lead-in is "Packaged it is. Here's the outline, with every step that needs you
+   marked [needs you]:" (or "Hosted it is. ..." for hosted), followed by the
+   bullets below exactly as written, then the prompting-level question (item 4)
+   in the same message.
 
    **Packaged outline:**
    - **Pick & connect the published datasource**: [needs you] to choose it and sign in.
    - Examine the data & find the signal: automatic; may [needs you] to confirm the story angle.
-   - **Who is this for?**: [needs you], as below.
+   - **Who is this for?**: [needs you], asked with the style question.
    - Draft the story & pick the scrolly design: may [needs you] for persona/tone.
    - Build the scrollytelling HTML plus its live VDS query: automatic.
    - **Publishing credentials**: [needs you], once only. Run `store-secret` (it
@@ -145,6 +149,22 @@ question to the user follows the same rule.
      single chart type), offer to place it and hand off to `author-extension`.
      If the ask is an animated multi-chapter narrative, which Exchange extensions
      rarely cover, say why and continue with the custom build.
+
+7. **Ask which datasource**, as the closing message of the turn, right after the
+   local-extension line, with exactly this wording and nothing else (the audience
+   was already asked in item 5; no suggestions, no remarks about the workbook name
+   or earlier stories, no project names):
+
+   > Which published datasource should the story use? Here are six on your site:
+   > 1. <name>
+   > ...
+   > 6. <name>
+   >
+   > Or name any other one. Reply with a number or a name.
+
+   List exactly six names, sorted A to Z from the site's datasource list, skipping
+   duplicates of the same name. If the user's reply matches no listed name or
+   number, ask once for the name.
 
 Only after Step 0 do you proceed to the build.
 
@@ -240,8 +260,12 @@ with a failed item; report Blocked or Working around it and name the item.
    4. **Caveats**, at most three bullets, in this order when they apply:
       seasonality (and what the yearly check showed), data past today's date,
       any other data-quality issue.
-   5. The window confirmation question, last, ending "Reply "use it" or give me
-      the dates."
+   5. The window confirmation question, last, word for word: "Use the full
+      history, <start> to <end>, as the story window? Reply "use it" or give me
+      the dates." (for a move-start window: "Use <start> to <end> as the story
+      window? ..."). Headings "**Checklist**" and "**Caveats**" are written as
+      shown. The Grain line is "Grain: daily (<date field>, N <unit>)" with no
+      extra counts.
    Chapter titles, extra yearly tables and a story title are not part of the
    proposal; they belong in the build.
 3. No tool names, script names, file paths under the skill folder, or JSON. Never
@@ -263,7 +287,9 @@ When the user says stop, reply with exactly: "Stopped. Nothing was published and
 your workbook is unchanged. Tell me when you want to pick this up again." Add
 nothing after it: no file names, paths or offers. Delete any scratch files this
 run created in the scratch folder before replying, without mentioning them. Then
-run the update check.
+run the update check. The stop reply is the final message: when the update check
+has nothing to report, send no further text after it, and never send the stop
+reply a second time.
 
 ## Error playbook
 

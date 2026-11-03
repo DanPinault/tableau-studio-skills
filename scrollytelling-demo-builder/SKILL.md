@@ -37,8 +37,8 @@ not reliably shown either; only the turn's closing message is. So for Step 0,
 do NOT call `ask-user`. Make the question and its numbered options the final
 message of the turn (full wording, never "see above" or just "reply X"), then
 stop and wait. If the user says they didn't see a question, restate it in full
-as the closing message. Ask the questions one at a time (delivery mode, then
-prompting level, then style); do not bundle them or skip ahead. Any later
+as the closing message. Ask delivery mode first, on its own. The prompting level and the style are then
+asked together in one message (items 4 and 5); do not skip ahead. Any later
 question to the user follows the same rule.
 
 1. **Explain what you will do.** Your first message about the story starts with
@@ -62,7 +62,7 @@ question to the user follows the same rule.
    lead-in is "Packaged it is. Here's the outline, with every step that needs you
    marked [needs you]:" (or "Hosted it is. ..." for hosted), followed by the
    bullets below exactly as written, then the prompting-level question (item 4)
-   in the same message.
+   and the style question (item 5), in the same message.
 
    **Packaged outline:**
    - **Pick & connect the published datasource**: [needs you] to choose it and sign in.
@@ -102,14 +102,14 @@ question to the user follows the same rule.
    >
    > Reply 1, 2 or 3.
 
-   Record the choice. Every subsequent [needs you] prompt scales its verbosity to it:
+   The style question (item 5) follows in the same message. Record the choice. Every subsequent [needs you] prompt scales its verbosity to it:
    Minimal = one terse line; Medium = context + what to do; Maximum = numbered click-by-click steps.
 
    The defaults named in that message are the override points: chapter count (step 3
    of the build procedure), probe depth for wide datasources and window length
    (build-procedure step 2). Name a default when you take it.
 
-5. **Ask the output style** as the closing message of the turn (not `ask-user`),
+5. **Ask the output style** in the same closing message as item 4, below it,
    word for word, with the options from `references/output-styles.md`:
 
    > Which output style do you want, and who is it for?
@@ -123,8 +123,14 @@ question to the user follows the same rule.
    >
    > Optional: I can pull a Tableau Public Viz of the Day for reference. Say "viz of the day".
    > Optional: I can check Tableau Exchange for an existing extension. Say "exchange".
+   >
+   > Answer both, for example "2, 3". Or reply "defaults" for Medium prompting and the recommended style for an executive reader.
 
-   Add nothing after the two Optional lines (no hint about audience or
+   Reply handling: "defaults" means prompting level 2 and Report brief with an
+   executive audience (flagged once in the proposal as assumed). Acknowledge it
+   in one line: "Defaults it is: Medium prompting and Report brief for an
+   executive reader." If the reply
+   answers only one of the two, ask for the other alone. Add nothing after the "Answer both" line (no hint about audience or
    preferences). This is the only place the audience is asked: never ask it again
    in the datasource question or the proposal. If the reply names no audience,
    assume an executive reader and flag the assumption once, in the proposal.
@@ -163,8 +169,12 @@ question to the user follows the same rule.
    > Or name any other one. Reply with a number or a name.
 
    List exactly six names, sorted A to Z from the site's datasource list, skipping
-   duplicates of the same name. If the user's reply matches no listed name or
-   number, ask once for the name.
+   duplicates of the same name. Match the reply to the site's full datasource
+   names ignoring upper and lower case: a full-name match wins even when longer
+   names contain it (so "superstore datasource" is Superstore Datasource). Only
+   when the reply matches no full name, and several names contain it, list those
+   names numbered and ask which one, with no recommendation. If it matches
+   nothing, ask once for the name.
 
 Only after Step 0 do you proceed to the build.
 
@@ -247,8 +257,8 @@ with a failed item; report Blocked or Working around it and name the item.
 
 ## Check before sending (Step 0 and the proposal)
 
-1. Each Step 0 message is one question with the pinned wording above, in the order
-   delivery mode, prompting level, style. Never bundled, never "see above".
+1. Each Step 0 message uses the pinned wording above, in the order delivery mode;
+   then prompting level and style together; then the datasource. Never "see above".
 2. The proposal has exactly these parts, in this order, and nothing else:
    1. One opening sentence: what was probed and whether there is a clear signal.
    2. **Checklist**, one line each: Grain; Measures probed ("N of N (names)");
@@ -256,7 +266,8 @@ with a failed item; report Blocked or Working around it and name the item.
       (or "none" with the one-line reason); Window (start to end); Chapters
       ("N (qualifying measures + opening and closing)"); Audience (only when
       assumed: "Assumed an executive reader").
-   3. The measures table with the pinned columns, one row per measure.
+   3. The measures table with the pinned columns, one row per measure. Every
+      percentage has a sign and one decimal (+75.3%, not +75%).
    4. **Caveats**, at most three bullets, in this order when they apply:
       seasonality (and what the yearly check showed), data past today's date,
       any other data-quality issue.
@@ -288,8 +299,8 @@ your workbook is unchanged. Tell me when you want to pick this up again." Add
 nothing after it: no file names, paths or offers. Delete any scratch files this
 run created in the scratch folder before replying, without mentioning them. Then
 run the update check. The stop reply is the final message: when the update check
-has nothing to report, send no further text after it, and never send the stop
-reply a second time.
+has nothing to report, send no further text after it (never say that there is
+nothing to report), and never send the stop reply a second time.
 
 ## Error playbook
 

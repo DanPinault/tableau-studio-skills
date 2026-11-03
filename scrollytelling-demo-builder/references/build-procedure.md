@@ -64,17 +64,22 @@ action triggers corruption if it recurs, instead of losing the whole dashboard.
   strongly-evidenced signal, stop probing further candidate angles — don't run
   every possible aggregate combination just to be thorough if the first one or
   two already tell a clean story.
-- **Scale the probe to the datasource's width/depth.** Narrow (<10 fields):
-  probe all measures in one call. Typical (10-50 fields): probe the 3-5 most
-  plausible measures/dimensions first (by name/role — cost, rate, count,
-  status fields over ids/keys) before widening. Wide (50+ fields): always
-  narrow to a named subset before probing — never pull every field into one
-  aggregate query. Tiny datasets (fewer rows than a normal sample window,
-  e.g. under ~30 days of daily data): skip the windowing step below entirely
-  and use the full history, noting to the user that there isn't enough
-  history to sub-window. Large row counts: prefer aggregate `query-datasource`
-  calls (grouped/summarized) over row-level pulls for signal-finding; only the
-  `feed_data` feeder (step 5) needs row-level granularity.
+- **Scale the probe to the datasource's width/depth (locked).**
+  - Narrow (under 10 fields): probe all numeric measures in one call.
+  - Typical (10 to 50 fields): probe every numeric measure in batches of at most 10
+    per call, so "N of N" in the proposal stays the full count.
+  - Wide (50 to 100 fields): probe the numeric measures only (dimensions are not
+    probed for the signal), at most 10 per call, and cap the probe at the first 20
+    numeric measures A to Z when there are more. Say "20 of N probed" in the
+    Measures line and name the cap as a default the user can override.
+  - Very wide (over 100 fields): ask the user for the measure subset (up to 10)
+    before probing; do not pull every field.
+  - Tiny (under 28 periods at the finest grain, the minimum for a 14-period
+    baseline plus a 14-period comparison): skip the move-start and yearly steps,
+    use the full history, and say there isn't enough history to sub-window.
+  - Under 400 rows or over 1,000,000 rows: no change to the rules. For large row
+    counts use aggregate calls only (grouped and summarized); only the `feed_data`
+    feeder (step 5) needs row-level granularity.
 - **If `query-datasource` returns empty rows or errors** (bad field reference,
   RLS blocking all rows, connection timeout), don't guess a signal from
   metadata alone — retry with a narrower field/date scope once; if it still

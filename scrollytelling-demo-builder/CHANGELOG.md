@@ -3,6 +3,36 @@
 The current version is in the `VERSION` file. The skill offers to update itself
 when launched; or replace this folder with the newer one and run `/reload-skills`.
 
+## 1.4.0 — 2026-11-02
+
+From a re-grade (79.1; weakest areas were efficiency, autonomy and scalability).
+
+- The prompting-level and style questions now arrive together in one message,
+  with a "defaults" reply (Medium prompting, recommended style, executive reader).
+  One fewer round trip before any work starts. Retest in a fresh chat.
+- Probe scaling is now locked by size: narrow, typical, wide (capped at 20 measures
+  with the cap stated), very wide (ask for a subset), and tiny (under 28 periods).
+- From the first 1.4.0 run: both questions and "defaults" worked. Fixed three
+  drifts: a lower-case datasource name now matches the full name instead of
+  asking which of three, a disambiguation list carries no recommendation, and the
+  stop reply is followed by nothing (a run added "I'm not reporting anything
+  further"). The "defaults" acknowledgement is one pinned line.
+- A second 1.4.0 run reached the proposal with the same numbers as before. Fixed:
+  the render check's secrets scan flagged three event names in the bundled
+  Extensions library (a real credential-style value is still caught; tested), and
+  percentages in the proposal table are always signed with one decimal.
+
+## 1.3.9 — 2026-11-02
+
+- The update script is safer. It now installs the latest GitHub release when the
+  repository has one (otherwise main), and `SKILL_UPDATE_REF` can force a tag,
+  branch or commit.
+- `apply` refuses a copy that is not newer than the installed one, is for a
+  different skill, has links or unsafe paths, is larger than expected, or fails
+  the optional `SHA256SUMS` check. A maintainer command, `sums`, writes that file.
+- Tested with a local copy: same version, tampered file, wrong skill name and a
+  good upgrade all behave as described.
+
 ## 1.3.8 — 2026-11-02
 
 From a 1.3.7 run (outline, datasource question, proposal and verdicts all matched

@@ -92,7 +92,11 @@ def main(argv):
         checks.append({"check": name, "pass": bool(ok), "detail": detail})
 
     add("no external scripts, styles, images or frames", not scan.ext, "; ".join(scan.ext[:5]))
-    secrets = re.findall(r"(?i)(?:pat|token|secret|password)[\"']?\s*[:=]\s*[\"'][A-Za-z0-9+/=_-]{16,}", html)
+    # a real credential mixes letters and digits; the bundled Extensions library
+    # has event names like ReadyToReceiveAuthToken="readytoreceiveauthtoken"
+    secrets = [m for m in re.findall(
+        r"(?i)(?:pat|token|secret|password)[\"']?\s*[:=]\s*[\"']([A-Za-z0-9+/=_-]{16,})", html)
+        if re.search(r"\d", m) and re.search(r"[A-Za-z]", m)]
     add("no secrets in the page", not secrets, f"{len(secrets)} suspicious assignment(s)")
     add("chapter sections present (3 to 6 plus opening and closing)", 3 <= scan.chapters <= 8, f"{scan.chapters} sections with data-ch")
     add("prose spans present", scan.dv > 0, f"{scan.dv} data-v spans")

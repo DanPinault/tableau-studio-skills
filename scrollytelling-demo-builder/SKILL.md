@@ -229,10 +229,21 @@ with a failed item; report Blocked or Working around it and name the item.
 
 1. Each Step 0 message is one question with the pinned wording above, in the order
    delivery mode, prompting level, style. Never bundled, never "see above".
-2. The proposal has the restated checklist (grain, measures probed out of the
-   total, lead signal and its relative change, move start date, window start and
-   end, chapter count), every measure with its change, aggregation rule and
-   "qualifies" or "noise", and ends with the window confirmation question.
+2. The proposal has exactly these parts, in this order, and nothing else:
+   1. One opening sentence: what was probed and whether there is a clear signal.
+   2. **Checklist**, one line each: Grain; Measures probed ("N of N (names)");
+      Lead signal (field name and relative change, or "none"); Move start date
+      (or "none" with the one-line reason); Window (start to end); Chapters
+      ("N (qualifying measures + opening and closing)"); Audience (only when
+      assumed: "Assumed an executive reader").
+   3. The measures table with the pinned columns, one row per measure.
+   4. **Caveats**, at most three bullets, in this order when they apply:
+      seasonality (and what the yearly check showed), data past today's date,
+      any other data-quality issue.
+   5. The window confirmation question, last, ending "Reply "use it" or give me
+      the dates."
+   Chapter titles, extra yearly tables and a story title are not part of the
+   proposal; they belong in the build.
 3. No tool names, script names, file paths under the skill folder, or JSON. Never
    say "the build procedure", "the skill" or "the window rule" in a message:
    say what you are doing instead (for example "I'm reading the datasource's

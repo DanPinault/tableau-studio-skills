@@ -3,6 +3,16 @@
 The current version is in the `VERSION` file. The skill offers to update itself
 when launched; or replace this folder with the newer one and run `/reload-skills`.
 
+## 1.3.5 — 2026-11-02
+
+Re-graded 81.1 (B-, stricter pass than the earlier 85.1; not comparable).
+
+- Proposal shape pinned: opening sentence, checklist (fixed lines), measures
+  table, at most three caveats in a fixed order, window question last.
+- Chapter titles and order pinned for the build (question opening, result
+  sentences with real numbers, largest change first, fixed closing titles).
+- Not yet retested in fresh chats.
+
 ## 1.3.4 — 2026-11-02
 
 From two fresh-chat runs of 1.3.3 (both clean on Step 0, window fallback,

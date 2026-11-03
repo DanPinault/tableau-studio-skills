@@ -3,6 +3,28 @@
 The current version is in the `VERSION` file. The skill offers to update itself
 when launched; or replace this folder with the newer one and run `/reload-skills`.
 
+## 1.4.1 — 2026-11-02
+
+From the first hosted-mode run (it got as far as the feeder sheet; hosting,
+placement steps and the Publish dialog are still untested).
+
+- A "full" year is judged from the data, never from today's date. The hosted run
+  dropped 2026 and reported Profit +52.9% where the packaged runs gave +75.3%.
+- The hosted feeder sheet needs the chosen datasource connected first. The skill
+  now connects it through the workbook CLI instead of asking the user to choose
+  between connecting it and using another source.
+- The stop reply is different when a feed_data sheet was already added (the old
+  wording said the workbook was unchanged, which was false).
+- The hosted outline's audience line now matches the packaged one.
+- The proposal carries no ranking line or anomaly caveat between the table and
+  the caveats.
+- Two rejected feeder edits now end in a hand-over of the manual recipe.
+- A packaged run on 1.4.0 text-with-fixes reproduced the earlier numbers exactly
+  (Profit +75.3%, Quantity +54.0%, Sales +42.5%, Profit Ratio +23.0%, Discount
+  +1.3%). Two small pins from it: the datasource list order for names that differ
+  only by a hyphen or underscore, and the Chapters line always carries the count of
+  qualifying measures.
+
 ## 1.4.0 — 2026-11-02
 
 From a re-grade (79.1; weakest areas were efficiency, autonomy and scalability).

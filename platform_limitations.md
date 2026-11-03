@@ -21,3 +21,8 @@ Used by skill-grader-desktop to cross-check skills against known gaps. Each entr
 - **Studio caches its copy of a skill.** After editing `SKILL.md`, reload skills before re-testing, or the old text runs.
 - **The agent can't delete workbooks on Tableau Cloud.** Cleanup of published test workbooks is manual.
 - **`list-projects` with a small `limit` returns the count but not all names.** Call it without `limit` when the names are needed.
+
+## Gaps seen while testing scrollytelling-demo-builder hosted mode (2026-11-02)
+
+- **Edits to a new feeder worksheet can start failing partway.** After the first field applied, further edits were rejected with a file-access error, and a fresh copy of the sheet did not help. The cause is unconfirmed (seen once). Workaround: stop after two rejections and give the user the manual recipe for the sheet.
+- **The open workbook may be connected to a different datasource than the one the story uses.** The feeder sheet must come from the chosen datasource, so connect it first with the workbook CLI; do not substitute another source.

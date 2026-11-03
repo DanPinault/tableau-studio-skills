@@ -79,10 +79,7 @@ question to the user follows the same rule.
    **Hosted outline:**
    - **Pick & connect the published datasource** — [needs you]: choose it, sign in / authorize.
    - Examine the data & find the signal — automatic (VizQL queries); may [needs you] to confirm the story angle.
-   - **Who is this for?** — [needs you]: ask the intended audience (e.g. exec/CFO
-     one-pager vs. analyst deep-dive) if it isn't already obvious from the
-     user's request — it drives which template pattern, how many chapters, and
-     how much density/detail the story carries.
+   - **Who is this for?**: [needs you], asked with the style question.
    - Draft the story & pick the scrolly design — may [needs you] for persona/tone.
    - Build the scrollytelling HTML (D3 + Tableau Extensions API) — automatic.
    - Build the `feed_data` sheet — automatic.
@@ -168,8 +165,9 @@ question to the user follows the same rule.
    >
    > Or name any other one. Reply with a number or a name.
 
-   List exactly six names, sorted A to Z from the site's datasource list, skipping
-   duplicates of the same name. Match the reply to the site's full datasource
+   List exactly six names, sorted A to Z from the site's datasource list (compare
+   names ignoring case, character by character, so "amp-data" comes before
+   "amp_data"), skipping duplicates of the same name. Match the reply to the site's full datasource
    names ignoring upper and lower case: a full-name match wins even when longer
    names contain it (so "superstore datasource" is Superstore Datasource). Only
    when the reply matches no full name, and several names contain it, list those
@@ -264,13 +262,16 @@ with a failed item; report Blocked or Working around it and name the item.
    2. **Checklist**, one line each: Grain; Measures probed ("N of N (names)");
       Lead signal (field name and relative change, or "none"); Move start date
       (or "none" with the one-line reason); Window (start to end); Chapters
-      ("N (qualifying measures + opening and closing)"); Audience (only when
+      (for example "6 (4 qualifying measures + opening and closing)", with the
+      real counts); Audience (only when
       assumed: "Assumed an executive reader").
    3. The measures table with the pinned columns, one row per measure. Every
       percentage has a sign and one decimal (+75.3%, not +75%).
    4. **Caveats**, at most three bullets, in this order when they apply:
       seasonality (and what the yearly check showed), data past today's date,
-      any other data-quality issue.
+      any other data-quality issue. Anomaly counts and measure rankings are not
+      caveats and are not in the proposal. Nothing sits between the table and
+      **Caveats**.
    5. The window confirmation question, last, word for word: "Use the full
       history, <start> to <end>, as the story window? Reply "use it" or give me
       the dates." (for a move-start window: "Use <start> to <end> as the story
@@ -301,6 +302,12 @@ run created in the scratch folder before replying, without mentioning them. Then
 run the update check. The stop reply is the final message: when the update check
 has nothing to report, send no further text after it (never say that there is
 nothing to report), and never send the stop reply a second time.
+
+If this run already added a sheet to the user's workbook (the hosted `feed_data`
+sheet), the first sentence is false. Reply instead with exactly: "Stopped.
+Nothing was published. The feed_data sheet I started is still in your workbook:
+delete it, or tell me to finish it. Tell me when you want to pick this up
+again." Same rules: nothing after it, sent once.
 
 ## Error playbook
 

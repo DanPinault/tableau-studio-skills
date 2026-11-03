@@ -187,7 +187,10 @@ action triggers corruption if it recurs, instead of losing the whole dashboard.
      partly seasonal. The window is still confirmed with the user.
      Yearly comparison (only here): for EVERY measure, compare its value per
      period in the first full calendar year with the last full calendar year
-     (ratios as sum over sum within each year), using the same thresholds. When
+     (ratios as sum over sum within each year), using the same thresholds. A year
+     is full when the data has rows in both its first and its last month; judge
+     this from the data only, never from today's date (a year that runs past today
+     still counts, and the proposal flags that in the caveats). When
      this step ran, the yearly comparison decides the verdict, because first-14
      vs last-14 is partly seasonal; the first-14 column is shown for reference
      only. A measure that qualifies on the yearly comparison is "qualifies" even
@@ -377,6 +380,13 @@ commands and failure modes. In order:
   whether it already carries the right dimensions/measures/window before
   building a new one from scratch — reuse and adjust it if so, rather than
   creating a duplicate feeder sheet.
+- **Connect the datasource the story uses first.** The feeder must come from the
+  datasource the user chose, in this workbook. If the open workbook is connected to
+  a different one, do not swap silently and do not build on it: connect the chosen
+  datasource through the workbook CLI's datasource commands, and only if those
+  cannot express it, hand the user to Data > New Data Source with the exact
+  project and name. Never ask the user to pick between "connect it" and "use
+  another datasource" unless the chosen one cannot be reached.
 - Author the **`feed_data`** feeder crosstab **per the recipe in
   `style-guide.md`** (discrete Day-Trunc date × story dimensions on rows, each
   measure aggregated as `MEAS` expects, the multi-measure Text-mark pattern),
@@ -388,6 +398,10 @@ commands and failure modes. In order:
   against the chosen window, and sample measure magnitudes against plausible
   real-world values, in `get-summary-data`'s output before moving on — confirm
   the real shape there, not just a clean apply receipt.
+- **If Tableau rejects the sheet edits twice**, stop. The stop reply for that case
+  names the half-built sheet (see SKILL.md "Clean stop"). Hand over the manual
+  recipe: Order Date (discrete Day) on Rows, then the story dimensions; Marks set
+  to Text with each measure as SUM on Text; the window filter from step 2.
 - Leave it as a normal (non-floating) worksheet for now — do not try to place or
   float it yourself. Placement happens in the [needs you] step below.
 

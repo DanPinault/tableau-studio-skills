@@ -121,7 +121,14 @@ action triggers corruption if it recurs, instead of losing the whole dashboard.
     list each pair that diverges, with both changes.
   - **Measures probed:** count every numeric measure the datasource lists,
     including calculated ratio measures (computed as the sum of the numerator over
-    the sum of the denominator). State "N of N" from that list. Do not add
+    the sum of the denominator over the whole 14-period block; never the average
+    of per-period ratios, which blows up when a period's denominator is near zero
+    and gives a different answer each run). The proposal table's columns are
+    Measure, Rule, First 14 vs last 14, and (only when step 3b ran) First vs last
+    full year, then Verdict. State "N of N" from that list, followed by the names
+    in parentheses, and name measures by their field names (Quantity, not "units
+    sold"). The yearly comparison covers every measure, ratios included, each
+    computed as in the first-14 comparison. Do not add
     measures of your own, such as row counts, to the count.
   - **Concentration:** the top 3 members hold more than 50% of the total.
   - **Anomaly:** a point more than 3 standard deviations from the window mean.
@@ -233,13 +240,16 @@ action triggers corruption if it recurs, instead of losing the whole dashboard.
   actions). If persona/tone matters to the demo, [needs you] to confirm.
 - **Locked chapter count (default; the user can override, and you must name the
   default you used).**
-  - One chapter per distinct signal that meets the locked thresholds in step 2.
+  - One chapter per qualifying measure after the seasonality check (a measure
+    that qualifies is one signal, even when it moves with another; never merge
+    measures to shorten the story). Chapters = qualifying measures + 2, then
+    clamped to 3 to 6. The audience does not change this number; it only changes
+    density and tone. State it as "Chapters: N (qualifying measures + opening and
+    closing)".
   - Plus one opening chapter that frames the question and one closing chapter
     for implications or actions.
   - Minimum 3 chapters, maximum 6. If more than 4 signals qualify, keep the 4
     with the largest relative change and mention the rest in the closing chapter.
-  - Audience: an executive brief takes the low end of the range, an analyst
-    deep-dive the high end.
   - This count feeds the pinned versus numbered-chapter tie-break above (4+ beats means numbered chapters).
 - **The chosen template's chapter list is a starting mechanics reference, not
   the target shape.** Let the real signal and the intended audience decide

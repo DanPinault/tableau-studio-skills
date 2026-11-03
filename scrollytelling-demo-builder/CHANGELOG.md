@@ -3,6 +3,17 @@
 The current version is in the `VERSION` file. The skill offers to update itself
 when launched; or replace this folder with the newer one and run `/reload-skills`.
 
+## 1.3.4 — 2026-11-02
+
+From two fresh-chat runs of 1.3.3 (both clean on Step 0, window fallback,
+seasonality check and stop; they differed on three details).
+
+- Profit Ratio is a ratio of block sums, never an average of per-period ratios.
+- Proposal table columns pinned; the yearly comparison covers every measure,
+  ratios included; measures are named by field name with "N of N (names)".
+- Chapter count is mechanical: qualifying measures + 2, clamped to 3 to 6; the
+  audience no longer changes it (one run gave 4, the other 5).
+
 ## 1.3.3 — 2026-11-02
 
 - New `scripts/check_story.py`: pre-delivery check on the built page. Static checks

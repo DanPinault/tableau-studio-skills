@@ -249,6 +249,10 @@ Never show tool names, script names or JSON to the user; describe outcomes inste
    project. Check with the content search; if one does, name it and ask whether to
    overwrite it or use another name. (`publish` overwrites a same-name workbook
    without asking; re-publishing your own story while iterating is fine.)
+8. Charts and captions: every value axis covers the data's minimum and maximum
+   (including negatives), axis labels do not overlap, and no caption states a
+   pattern or cause the queried rows have not been tested for. The header must not
+   hide chapters in a short frame (style guide, "Rules from published runs").
 
 If any gate item fails, fix that item and re-run the whole gate. Never report Done
 with a failed item; report Blocked or Working around it and name the item.

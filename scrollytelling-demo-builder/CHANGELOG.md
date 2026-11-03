@@ -3,6 +3,20 @@
 The current version is in the `VERSION` file. The skill offers to update itself
 when launched; or replace this folder with the newer one and run `/reload-skills`.
 
+## 1.4.3 — 2026-11-02
+
+From a full packaged run (it published; the user's check on Cloud found defects the
+local checks missed).
+
+- Only four of six chapter links showed in Cloud's frame: a wrapped, sticky header
+  filled the visible area. Both templates now un-stick the header in short frames,
+  and the style guide requires a one-row scrolling chapter nav.
+- The monthly chart clipped negative values and its year labels ran together; the
+  caption claimed "January dips repeat every year" without a test. The style guide
+  now covers axes and captions, and the pre-delivery gate has item 8 for both.
+- The story title pin carries the full datasource name ("Superstore Datasource
+  Profit brief"); the run used "Superstore Profit Brief".
+
 ## 1.4.2 — 2026-11-02
 
 - A run ended by offering a seventh chapter on its own (the locked maximum is 6).

@@ -207,3 +207,16 @@ the single reference for the feeder's shape; the build procedure points here.
 - **Sentinel test** to prove the tile reads the sheet (not a baked snapshot): swap
   one measure for a constant calc whose name still contains the caption substring,
   and confirm the tile shows the constant.
+
+## Rules from published runs (keep in every style)
+
+- **Header and chapter links:** the chapter links sit on one row that scrolls
+  sideways (no wrapping), and the header is not sticky when the frame is short
+  (height under 600px). A wrapped sticky header filled a short Cloud frame, so a
+  reader saw only four of six chapters.
+- **Axes:** a value axis spans the data's real minimum and maximum, and goes below
+  zero when any value is negative. A multi-year monthly axis labels one tick per
+  year so labels never run together.
+- **Captions state only what the rows show.** Words like "every year", "always",
+  "repeats" or a cause are allowed only after you tested them on the queried rows.
+  Otherwise describe the range or the size of the move.

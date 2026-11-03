@@ -262,8 +262,9 @@ action triggers corruption if it recurs, instead of losing the whole dashboard.
     sentence stating its result with the number from the queried rows ("Sales
     grew 51% between 2023 and 2026."). Signal chapters run in lead-signal order,
     then by relative change, largest first. The closing is "What to review"
-    (executive) or "What this means" (analyst). The story title is "<Datasource>
-    <lead measure> brief" for a Report brief, and the audience never changes the
+    (executive) or "What this means" (analyst). The story title is
+    "<Datasource name exactly as listed> <lead measure> brief" for a Report brief
+    (for example "Superstore Datasource Profit brief"), and the audience never changes the
     chapter order. Numbers in titles use the yearly figures once the seasonality
     check ran.
   - Plus one opening chapter that frames the question and one closing chapter

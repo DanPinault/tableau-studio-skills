@@ -3,6 +3,17 @@
 The current version is in the `VERSION` file. The skill offers to update itself
 when launched; or replace this folder with the newer one and run `/reload-skills`.
 
+## 1.2.6 — 2026-11-02
+
+- The update script is safer. It now installs the latest GitHub release when the
+  repository has one (otherwise main), and `SKILL_UPDATE_REF` can force a tag,
+  branch or commit.
+- `apply` refuses a copy that is not newer than the installed one, is for a
+  different skill, has links or unsafe paths, is larger than expected, or fails
+  the optional `SHA256SUMS` check. A maintainer command, `sums`, writes that file.
+- Tested with a local copy: same version, tampered file, wrong skill name and a
+  good upgrade all behave as described.
+
 ## 1.2.5 — 2026-11-02
 
 - Tested the full path on a real measure (Profit): plan, create, read-back,

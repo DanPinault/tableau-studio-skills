@@ -268,6 +268,11 @@ action triggers corruption if it recurs, instead of losing the whole dashboard.
     check ran.
   - Plus one opening chapter that frames the question and one closing chapter
     for implications or actions.
+  - **The limit of 6 holds after the build too.** Do not offer extra chapters or
+    follow-up analysis the user did not ask for. If the user asks for another
+    chapter, the story keeps 6: say which existing signal chapter it would replace
+    (the one with the smallest yearly change) and offer that swap. Never propose a
+    seventh chapter.
   - Minimum 3 chapters, maximum 6. If more than 4 signals qualify, keep the 4
     with the largest relative change and mention the rest in the closing chapter.
   - This count feeds the pinned versus numbered-chapter tie-break above (4+ beats means numbered chapters).

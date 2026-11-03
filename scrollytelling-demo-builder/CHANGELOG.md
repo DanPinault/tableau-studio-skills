@@ -3,6 +3,12 @@
 The current version is in the `VERSION` file. The skill offers to update itself
 when launched; or replace this folder with the newer one and run `/reload-skills`.
 
+## 1.4.2 — 2026-11-02
+
+- A run ended by offering a seventh chapter on its own (the locked maximum is 6).
+  The limit now holds after the build: no unrequested extra chapters, and a
+  requested one replaces the weakest signal chapter.
+
 ## 1.4.1 — 2026-11-02
 
 From the first hosted-mode run (it got as far as the feeder sheet; hosting,

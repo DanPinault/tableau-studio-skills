@@ -62,6 +62,10 @@ question to the user follows the same rule.
    question (item 4) and the style question (item 5) in one message. Later:
    the local-extension check (item 6) and the datasource question (item 7). That
    file also pins the reply handling, the datasource list and its matching rules.
+   Datasource replies match the datasources' own names only. A project with the
+   same word in its name is not a datasource: never use a project's ID. When a
+   word like "logistics" is in several datasource names, list those datasources
+   numbered and ask which one.
 
 Only after Step 0 do you proceed to the build.
 
@@ -253,7 +257,10 @@ below applies and you need the detail.
 
 Scratch files (build artifacts, staged HTML) go under
 `.build/scrollytelling-demo-builder/` in the skills folder (the folder that holds
-this skill's own folder); clean them up when done.
+this skill's own folder); keep them until the user confirms the published view, then delete them
+without mentioning it (a clean stop deletes them at once). Any change after delivery
+(a style fix, a copy edit) is made on the kept source, then the whole gate re-runs
+before republishing; never patch the published copy.
 
 After creating or editing this skill, tell the user to run `/reload-skills`.
 

@@ -3,6 +3,13 @@
 The current version is in the `VERSION` file. The skill offers to update itself
 when launched; or replace this folder with the newer one and run `/reload-skills`.
 
+## 1.4.24 — 2026-11-04
+
+- Datasource matching rule (datasource names only, never a project's ID) is also in
+  SKILL.md; the 1.4.23 run still used a project ID for "use logistics".
+- Scratch is kept until the user confirms the published view; later changes are made
+  on the kept source and the whole gate re-runs.
+
 ## 1.4.23 — 2026-11-04
 
 - `probe_signal.py` prints the proposal lines (measures, lead signal, move start, window,

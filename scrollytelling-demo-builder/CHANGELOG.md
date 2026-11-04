@@ -3,6 +3,12 @@
 The current version is in the `VERSION` file. The skill offers to update itself
 when launched; or replace this folder with the newer one and run `/reload-skills`.
 
+## 1.4.19 — 2026-11-04
+
+- The datasource question starts from the open workbook: a connected published
+  datasource is offered first ("Use it?"), several are listed alone, and the
+  six-name list is asked only when none is connected.
+
 ## 1.4.18 — 2026-11-04
 
 - Datasources with equal updated times list A to Z (two runs showed A to Z, most

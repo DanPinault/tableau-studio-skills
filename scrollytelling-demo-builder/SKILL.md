@@ -153,10 +153,19 @@ question to the user follows the same rule.
      If the ask is an animated multi-chapter narrative, which Exchange extensions
      rarely cover, say why and continue with the custom build.
 
-7. **Ask which datasource**, as the closing message of the turn, right after the
+7. **Ask which datasource.** First read the open workbook's datasources once and
+   keep those whose name matches (ignoring case) a published datasource on the
+   site. If exactly one matches, ask, as the closing message right after the
+   local-extension line, with exactly this wording and nothing else: "Your
+   workbook is connected to <name>. Use it for the story? Reply "yes", or name
+   another published datasource." A "yes" selects it and skips the list below.
+   If several match, list only those, numbered, with "Or name any other one.
+   Reply with a number or a name." If none match (nothing connected, or only
+   unpublished sources), ask the six-name question below.
+
+   The six-name question is asked as the closing message of the turn, right after the
    local-extension line, with exactly this wording and nothing else (the audience
-   was already asked in item 5; no suggestions, no remarks about the workbook name
-   or earlier stories, no project names):
+   was already asked in item 5; no suggestions, no remarks about earlier stories, no project names):
 
    > Which published datasource should the story use? Here are six on your site:
    > 1. <name>

@@ -3,6 +3,12 @@
 The current version is in the `VERSION` file. The skill offers to update itself
 when launched; or replace this folder with the newer one and run `/reload-skills`.
 
+## 1.4.12 — 2026-11-04
+
+- Logistics repeat runs matched on every number; wording pins from them: Rule
+  column is only the aggregation, nothing (including divergent pairs) between
+  the table and Caveats, and no "not checked" or "none found" caveats.
+
 ## 1.4.11 — 2026-11-04
 
 - When more than 4 measures qualify, the Chapters line shows the real qualifying

@@ -275,12 +275,17 @@ Name the item.
       strongest get chapters + opening and closing)", and that is the only place
       the cap is mentioned); Audience (only when
       assumed, labelled: "Audience: Assumed an executive reader").
-   3. The measures table with the pinned columns, one row per measure. Every
-      percentage has a sign and one decimal (+75.3%, not +75%).
+   3. The measures table with the pinned columns, one row per measure. The Rule
+      column is only the aggregation (SUM, AVG, or SUM(a) / SUM(b)), plus "probe
+      measure" for a derived Profit Ratio; no other words. Every percentage has a
+      sign and one decimal (+75.3%, not +75%). Divergent pairs, if any, are
+      named on the Lead signal line or left for the build, never between the
+      table and **Caveats**.
    4. **Caveats**, at most three bullets, in this order when they apply:
       seasonality (and what the yearly check showed, without yearly values), data
       past today's date, any other data-quality issue (never an explanation of a
-      verdict, a calculation or a rule; with no such issue there are two bullets; no figures in any caveat). Anomaly counts and measure rankings are not
+      verdict, a calculation or a rule, never a "not checked" or "none found"
+      note; with no such issue there are two bullets; no figures in any caveat). Anomaly counts and measure rankings are not
       caveats and are not in the proposal. Nothing sits between the table and
       **Caveats**.
    5. The window confirmation question, last, word for word: "Use the full

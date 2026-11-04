@@ -3,6 +3,14 @@
 The current version is in the `VERSION` file. The skill offers to update itself
 when launched; or replace this folder with the newer one and run `/reload-skills`.
 
+## 1.4.18 — 2026-11-04
+
+- Datasources with equal updated times list A to Z (two runs showed A to Z, most
+  likely because every time was the same). The Lead signal line carries nothing
+  after the figure. The page shows the proposal's move start date, not one
+  recomputed in the window. The completion report omits scratch cleanup and an
+  up-to-date update check.
+
 ## 1.4.17 — 2026-11-04
 
 - The Lead signal figure must equal the first table row's change (a run showed

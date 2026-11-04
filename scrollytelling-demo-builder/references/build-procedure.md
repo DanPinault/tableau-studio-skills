@@ -129,7 +129,10 @@ action triggers corruption if it recurs, instead of losing the whole dashboard.
   - **The page matches the probe:** a percent or rate field shown on the page
     (Discount) uses the same per-period mean as the probe, so the page and the
     proposal show one figure, never a row-level mean beside a per-period one. If
-    they differ, say so before publishing. The same holds for the headline
+    they differ, say so before publishing. The same holds for the move-start
+    marker: the page shows the proposal's move start date as a fixed value, never
+    one recomputed inside the window (a run showed Aug 23 against the
+    proposal's Jul 25). The same holds for the headline
     change: the page headline shows the proposal's lead-signal figure, never a
     different span's figure.
   - **Percent and rate fields** (such as Discount) use the field's per-period

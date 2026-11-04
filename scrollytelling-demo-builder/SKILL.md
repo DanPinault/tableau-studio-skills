@@ -168,7 +168,8 @@ question to the user follows the same rule.
    List exactly six names: the six most recently updated datasources on the site
    (by the list's `updatedAt`, newest first), skipping duplicates of the same
    name. Print the names in that newest-first order; never re-sort them A to Z
-   when the times exist. If the list carries no updated time, use A to Z instead (compare names
+   when the times exist. Datasources with the same time are ordered A to Z among
+   themselves; if every time is the same, the list is A to Z. If the list carries no updated time, use A to Z instead (compare names
    ignoring case, character by character, so "amp-data" comes before
    "amp_data"). Match the reply to the site's full datasource
    names ignoring upper and lower case: a full-name match wins even when longer
@@ -271,7 +272,7 @@ Name the item.
 2. The proposal has exactly these parts, in this order, and nothing else:
    1. One opening sentence: what was probed and whether there is a clear signal.
    2. **Checklist**, one line each: Grain; Measures probed ("N of N (names)");
-      Lead signal (field name and its change, no divergent pairs, or "none"; the figure is exactly the first table row's change cell, never a figure from a different span); the line is
+      Lead signal (the field name, a comma and its change, nothing after the figure, so no "diverging from" clause, or "none"; the figure is exactly the first table row's change in the column that decides verdicts, the yearly column when the table has one, otherwise the first-14 column, never a figure from a different span); the line is
       labelled "Move start date:" and gives the date (or "none" with the one-line reason, no baseline numbers); Window (start to end); Chapters
       (for example "6 (4 qualifying measures + opening and closing)", with the
       real counts; when more than 4 qualify: "6 (N qualifying measures, the 4
@@ -363,6 +364,7 @@ again." Same rules: nothing after it, sent once.
 - **Datasource / story angle / window:** one line each.
 - **Mode and artifact:** packaged (workbook name, project, view URL; no package id) or hosted (feed_data sheet, host URL, `.trex` path).
 - **Verified:** which gate items passed.
+  Never mention scratch cleanup or the update check unless an update is available.
 - **Needs you:** manual checks left (scroll, Demo/Live toggle, Explore filters) or hosted dashboard steps.
 
 ## Invariants

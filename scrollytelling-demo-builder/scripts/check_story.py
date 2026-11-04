@@ -100,6 +100,12 @@ def main(argv):
     add("no secrets in the page", not secrets, f"{len(secrets)} suspicious assignment(s)")
     add("chapter sections present (3 to 6 plus opening and closing)", 3 <= scan.chapters <= 8, f"{scan.chapters} sections with data-ch")
     add("prose spans present", scan.dv > 0, f"{scan.dv} data-v spans")
+    # a sticky header that wraps covers the page in a short Cloud frame
+    sticky = bool(re.search(r"position:\s*sticky", html))
+    short_ok = bool(re.search(
+        r"@media\s*\(\s*max-height:\s*\d+px\s*\)\s*\{[^}]*position:\s*static", html))
+    add("a sticky header turns off in a short frame", (not sticky) or short_ok,
+        "sticky header with no max-height rule" if sticky and not short_ok else "")
     if query:
         q = json.load(open(query))
         has_filter = bool(q.get("filters"))

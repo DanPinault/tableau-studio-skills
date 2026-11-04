@@ -252,7 +252,9 @@ Never show tool names, script names or JSON to the user; describe outcomes inste
 8. Charts and captions: every value axis covers the data's minimum and maximum
    (including negatives), axis labels do not overlap, and no caption states a
    pattern or cause the queried rows have not been tested for. The header must not
-   hide chapters in a short frame (style guide, "Rules from published runs").
+   hide chapters in a short frame (style guide, "Rules from published runs"); the
+    check script tests this for a sticky header, and a published run is looked at
+    in a frame about 450 px tall when the user can open it.
 
 If any gate item fails, fix that item and re-run the whole gate. Never report Done
 with a failed item; report Blocked or Working around it and name the item.

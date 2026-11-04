@@ -3,6 +3,12 @@
 The current version is in the `VERSION` file. The skill offers to update itself
 when launched; or replace this folder with the newer one and run `/reload-skills`.
 
+## 1.4.8 — 2026-11-04
+
+- The page check now fails a sticky header that has no short-frame rule, and
+  gate item 8 points to it, so the Cloud nav clipping found by eye is caught
+  before publishing.
+
 ## 1.4.7 — 2026-11-04
 
 - The yearly comparison uses each year's per-period average, not the raw year

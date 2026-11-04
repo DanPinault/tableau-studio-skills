@@ -128,10 +128,14 @@ Never show tool names, script names or JSON to the user; describe outcomes inste
 
 ## Pre-delivery gate (run before saying Done)
 
-0. Run `python3 -I "<this skill folder>/scripts/check_story.py" <built story.html> --query <q.json>`
-   (omit `--query` in hosted mode) on the built page before packaging. Every check
+0. Run `python3 -I "<this skill folder>/scripts/check_story.py" <built story.html> --query <q.json> --probe <probe.json>`
+   (omit `--query` in hosted mode; `<probe.json>` is the saved output of the
+   signal calculation) on the built page before packaging. Every check
    must pass; it renders all chapters headless, so a blank or broken later chapter
-   fails here instead of reaching the user. Fix and re-run on a failure. If it
+   fails here instead of reaching the user. It also fails a page that repeats a phrase
+   or decimal from a vendored template (item 5) or that does not show the proposal's
+   lead figure and move start (item 2). Demo/Live agreement (item 3) and axis
+   coverage (item 8) stay with the user's scroll and toggle check. Fix and re-run on a failure. If it
    reports no Chrome or Edge, say the render check was skipped. Never show its
    output; report only the result in plain words.
 1. 0 external `<script src>` and no secrets in the built HTML.

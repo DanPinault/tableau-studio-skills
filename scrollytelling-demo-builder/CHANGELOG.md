@@ -3,6 +3,11 @@
 The current version is in the `VERSION` file. The skill offers to update itself
 when launched; or replace this folder with the newer one and run `/reload-skills`.
 
+## 1.4.27 — 2026-11-04
+
+- `check_story.py` fails a page that repeats phrases or decimals from a vendored template,
+  and (with `--probe`) a page that lacks the proposal's lead figure or move start.
+
 ## 1.4.26 — 2026-11-04
 
 - Style guide: both the title bar and the chapter links row are pinned (users asked for the

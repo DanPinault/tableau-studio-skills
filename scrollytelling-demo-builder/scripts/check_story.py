@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
 """Pre-delivery check for a built scrolly story page (no network, stdlib only).
 
-usage: check_story.py <story.html> [--query q.json] [--chrome <path>]
+usage: check_story.py <story.html> [--query q.json] [--probe probe.json] [--chrome <path>]
 
 Static checks on the HTML, then (if Chrome or Edge is installed) renders the page
 headless and checks the live DOM, so every chapter is looked at, not just the
 first screen. Prints one JSON object; exit 0 = all checks pass, 1 = a check
 failed, 2 = could not run. Does not replace the user's scroll/toggle/Explore check.
+--probe takes the output of probe_signal.py and checks that the page shows the
+proposal's lead figure and move start. Phrases and decimals copied from the vendored
+templates (assets/public) fail the page.
 """
+import glob
+import html as htmllib
 import json
 import os
 import re
@@ -58,6 +63,41 @@ class Scan(HTMLParser):
             self._t = False
 
 
+def visible_text(h):
+    h = re.sub(r"(?is)<(script|style)\b.*?</\1>", " ", h)
+    return htmllib.unescape(re.sub(r"<[^>]+>", " ", h))
+
+
+def shingles(text, n=5):
+    w = re.findall(r"[a-z0-9%.']+", text.lower())
+    return {" ".join(w[i:i + n]) for i in range(len(w) - n + 1)}
+
+
+def template_leaks(page_text, skill_dir):
+    """Phrases and decimals the story shares with exactly one vendored template."""
+    paths = sorted(glob.glob(os.path.join(skill_dir, "assets", "public", "*.html")))
+    texts = [visible_text(open(p, encoding="utf-8").read()) for p in paths]
+    if len(texts) < 2:
+        return [], []
+    sh = [shingles(t) for t in texts]
+    nums = [set(re.findall(r"\b\d+\.\d+\b", t)) for t in texts]
+    shared_sh = set.intersection(*sh)      # interface wording both templates use
+    shared_n = set.intersection(*nums)
+    page_sh = shingles(page_text)
+    page_n = set(re.findall(r"\b\d+\.\d+\b", page_text))
+    phr = sorted((set.union(*sh) - shared_sh) & page_sh)
+    num = sorted((set.union(*nums) - shared_n) & page_n)
+    return phr, num
+
+
+def date_forms(iso):
+    import datetime
+    d = datetime.date.fromisoformat(iso)
+    return {iso, d.strftime("%b %d").replace(" 0", " "), d.strftime("%B %d").replace(" 0", " "),
+            "%s %d" % (d.strftime("%b"), d.day), "%s %d" % (d.strftime("%B"), d.day),
+            "%d %s" % (d.day, d.strftime("%b"))}
+
+
 def find_chrome(arg):
     for c in ([arg] if arg else []) + CHROMES:
         if c and os.path.exists(c):
@@ -81,6 +121,9 @@ def main(argv):
     path, query, chrome_arg = argv[1], None, None
     if "--query" in argv:
         query = argv[argv.index("--query") + 1]
+    probe = None
+    if "--probe" in argv:
+        probe = json.load(open(argv[argv.index("--probe") + 1]))
     if "--chrome" in argv:
         chrome_arg = argv[argv.index("--chrome") + 1]
     html = open(path, encoding="utf-8").read()
@@ -139,6 +182,21 @@ def main(argv):
                 f"sections without a chart: {nosvg} of {len(secs)}")
     else:
         add("page renders headless", False, "no Chrome or Edge found; render check skipped")
+    page_text = re.sub(r"\s+", " ", visible_text(dom if rendered else html))
+    skill_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    phr, num = template_leaks(page_text, skill_dir)
+    add("no phrases copied from a vendored template", not phr,
+        "; ".join(phr[:3]) + (" ..." if len(phr) > 3 else ""))
+    add("no decimals left over from a vendored template", not num, ", ".join(num[:6]))
+    if probe:
+        ls = probe.get("lead_signal")
+        if ls and ls.get("change") is not None:
+            fig = "%.1f" % abs(ls["change"] * 100)
+            add("the page shows the proposal's lead figure", fig in page_text, fig)
+        ms = probe.get("move_start")
+        if ms:
+            add("the page shows the proposal's move start",
+                any(f in page_text for f in date_forms(ms)), ms)
     ok = all(c["pass"] for c in checks if not c["check"].startswith("page renders") or chrome)
     print(json.dumps({"file": path, "rendered": rendered, "ok": ok, "checks": checks}, indent=2))
     return 0 if ok else 1

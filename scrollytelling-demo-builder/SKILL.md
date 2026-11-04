@@ -271,7 +271,9 @@ Name the item.
       Lead signal (field name and relative change, or "none"); Move start date
       (or "none" with the one-line reason, no baseline numbers); Window (start to end); Chapters
       (for example "6 (4 qualifying measures + opening and closing)", with the
-      real counts); Audience (only when
+      real counts; when more than 4 qualify: "6 (N qualifying measures, the 4
+      strongest get chapters + opening and closing)", and that is the only place
+      the cap is mentioned); Audience (only when
       assumed, labelled: "Audience: Assumed an executive reader").
    3. The measures table with the pinned columns, one row per measure. Every
       percentage has a sign and one decimal (+75.3%, not +75%).

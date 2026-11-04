@@ -3,6 +3,12 @@
 The current version is in the `VERSION` file. The skill offers to update itself
 when launched; or replace this folder with the newer one and run `/reload-skills`.
 
+## 1.4.11 — 2026-11-04
+
+- When more than 4 measures qualify, the Chapters line shows the real qualifying
+  count and says the 4 strongest get chapters; the cap is not a caveat (the
+  Logistics proposal said "4 qualifying" with 6 qualifying and added a cap caveat).
+
 ## 1.4.10 — 2026-11-04
 
 - Both bundled templates now draw and label dates in UTC (utcFormat, scaleUtc and a

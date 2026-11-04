@@ -3,6 +3,13 @@
 The current version is in the `VERSION` file. The skill offers to update itself
 when launched; or replace this folder with the newer one and run `/reload-skills`.
 
+## 1.4.22 — 2026-11-04
+
+- New `scripts/probe_signal.py` computes verdicts, lead signal, move start, window and
+  divergent pairs from saved rows, so the maths no longer varies between runs.
+- Pinned Step 0 and proposal wording moved to `references/messages.md`; SKILL.md
+  is 280 lines instead of 451.
+
 ## 1.4.21 — 2026-11-04
 
 - Datasource reply matches datasource names only, never a project name; the ID comes

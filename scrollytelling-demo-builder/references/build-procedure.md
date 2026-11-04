@@ -183,6 +183,17 @@ action triggers corruption if it recurs, instead of losing the whole dashboard.
   found) with aggregate queries and pick the one with the best signal-to-noise
   for the chosen angle — the shortest window that still shows the trend
   clearly, not the longest window available.
+- **Compute the numbers with the shipped script, never by hand or a script of
+  your own.** Save the date-grain rows from the probe query (one column per
+  measure, captions as keys) and run
+  `python3 -I "<skill folder>/scripts/probe_signal.py" <rows.json> --date <date field> --measure "Name|AVG" --measure "Name|SUM" --measure "Name|RATIO|Num|Den" --today <today>`.
+  It applies the thresholds and the window rule below and prints the null rate,
+  the first-14 and last-14 changes, the yearly comparison when there is no move
+  start, the verdicts, the lead signal, the move start, the window and any
+  divergent pairs. Its output fills the proposal; if it disagrees with a number
+  you computed another way, the script is right. It does not cover concentration
+  or anomaly checks, which stay separate queries. Run it from the folder that
+  holds the saved rows, with every path as its own literal argument.
 - **Locked window rule (follow this procedure exactly, do not eyeball):**
   0. Grain: use the datasource's finest native date grain for every period
      count and window edge (daily rows mean daily periods). Never roll up to

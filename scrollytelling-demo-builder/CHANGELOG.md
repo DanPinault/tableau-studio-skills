@@ -3,6 +3,11 @@
 The current version is in the `VERSION` file. The skill offers to update itself
 when launched; or replace this folder with the newer one and run `/reload-skills`.
 
+## 1.4.25 — 2026-11-04
+
+- Style guide: pin a compact title/toggle bar (about 56px), let the chapter chips scroll away,
+  and turn the pin off in a short frame.
+
 ## 1.4.24 — 2026-11-04
 
 - Datasource matching rule (datasource names only, never a project's ID) is also in

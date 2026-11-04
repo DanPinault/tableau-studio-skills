@@ -274,7 +274,7 @@ with a failed item; report Blocked or Working around it and name the item.
    4. **Caveats**, at most three bullets, in this order when they apply:
       seasonality (and what the yearly check showed, without yearly values), data
       past today's date, any other data-quality issue (never an explanation of a
-      verdict). Anomaly counts and measure rankings are not
+      verdict, a calculation or a rule; with no such issue there are two bullets). Anomaly counts and measure rankings are not
       caveats and are not in the proposal. Nothing sits between the table and
       **Caveats**.
    5. The window confirmation question, last, word for word: "Use the full

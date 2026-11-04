@@ -188,8 +188,10 @@ action triggers corruption if it recurs, instead of losing the whole dashboard.
      with no step, and note that comparing the first 14 and last 14 periods can be
      partly seasonal. The window is still confirmed with the user.
      Yearly comparison (only here): for EVERY measure, compare its value per
-     period in the first full calendar year with the last full calendar year
-     (ratios as sum over sum within each year), using the same thresholds. A year
+     period in the first full calendar year with the last full calendar year:
+     the year's total divided by the number of periods that have rows in that
+     year, never the raw year total, because the first and last years can have
+     different numbers of periods (ratios as sum over sum within each year), using the same thresholds. A year
      is full when the data has rows in both its first and its last month; judge
      this from the data only, never from today's date (a year that runs past today
      still counts, and the proposal flags that in the caveats). When

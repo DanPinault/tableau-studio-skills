@@ -3,6 +3,13 @@
 The current version is in the `VERSION` file. The skill offers to update itself
 when launched; or replace this folder with the newer one and run `/reload-skills`.
 
+## 1.4.7 — 2026-11-04
+
+- The yearly comparison uses each year's per-period average, not the raw year
+  total (the packaged run reported Profit +85.6% from totals where the locked
+  per-day method gives +75.3%, because 2023 starts on January 3).
+- A third caveat is only for a real data-quality issue; no calculation notes.
+
 ## 1.4.6 — 2026-11-04
 
 - Proposal wording pins from the 1.4.5 run: the Audience line keeps its label,

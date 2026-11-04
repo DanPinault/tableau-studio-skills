@@ -3,6 +3,12 @@
 The current version is in the `VERSION` file. The skill offers to update itself
 when launched; or replace this folder with the newer one and run `/reload-skills`.
 
+## 1.4.9 — 2026-11-04
+
+- Hosted end-to-end run: no figures in caveats, a pending user check keeps the
+  turn Blocked (not Done), and a percent field on the page must equal the
+  proposal's figure (Discount read 15.4% on the page, +1.4% in the proposal).
+
 ## 1.4.8 — 2026-11-04
 
 - The page check now fails a sticky header that has no short-frame rule, and

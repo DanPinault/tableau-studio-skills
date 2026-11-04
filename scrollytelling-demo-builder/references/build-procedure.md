@@ -120,6 +120,10 @@ action triggers corruption if it recurs, instead of losing the whole dashboard.
     other falls more than 5% over the same window. Test every pair of numeric
     measures (a pair counts as related when both are in the same datasource) and
     list each pair that diverges, with both changes.
+  - **The page matches the probe:** a percent or rate field shown on the page
+    (Discount) uses the same per-period mean as the probe, so the page and the
+    proposal show one figure, never a row-level mean beside a per-period one. If
+    they differ, say so before publishing.
   - **Percent and rate fields** (such as Discount) use the field's per-period
     AVG as the datasource returns it, then the plain mean of those per-period
     values across the block; never weight by row counts.

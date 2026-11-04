@@ -3,6 +3,12 @@
 The current version is in the `VERSION` file. The skill offers to update itself
 when launched; or replace this folder with the newer one and run `/reload-skills`.
 
+## 1.4.21 — 2026-11-04
+
+- Datasource reply matches datasource names only, never a project name; the ID comes
+  from the datasource's own entry (second-datasource run used a project ID and got a 403).
+- Completion report shape is required for a Blocked build message too, with no cleanup promise.
+
 ## 1.4.20 — 2026-11-04
 
 - Error playbook: expired sign-in, mid-run query failure and row-level security rows.

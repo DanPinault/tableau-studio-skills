@@ -3,6 +3,37 @@
 The current version is in the `VERSION` file. The skill offers to update itself
 when launched; or replace this folder with the newer one and run `/reload-skills`.
 
+## 1.4.17 — 2026-11-04
+
+- The Lead signal figure must equal the first table row's change (a run showed
+  +23.0% above a table that said +18.7%). The banned-caveat rule gets a concrete
+  example. The datasource list must print in the newest-first order it was sorted
+  into (a run fetched updatedAt and still listed A to Z).
+
+## 1.4.16 — 2026-11-04
+
+- Move start is now defined exactly (sample SD, 7-period trailing mean over periods
+  i-6..i, move start at the end of the first qualifying span in the final unbroken
+  run). The Logistics runs gave 2026-07-22 four times and 2026-07-25 once, so
+  the earlier date may have used a different definition; recheck on a fresh run.
+- The datasource question lists the six most recently updated (A to Z if the
+  list has no updated time).
+- SKILL.md shortened (494 to about 430 lines): the full Invariants text moved to
+  references/invariants.md.
+
+## 1.4.15 — 2026-11-04
+
+- A fresh run clears the scratch folder and starts from the bundled template (a
+  publish run reused a leftover template and kept the old top-bar title).
+  The Lead signal line holds only the field and its change.
+
+## 1.4.14 — 2026-11-04
+
+- With a move start, the first-14 vs last-14 column is taken from the story
+  window, so the page headline and the proposal agree (the Logistics page
+  showed +18.7% against +23.0% in the proposal). Caveats hold no build plans.
+  Long datasource names are shortened in the cover title.
+
 ## 1.4.13 — 2026-11-04
 
 - Change cells show only the signed percentage (a run showed "3.3% -> 4.0%

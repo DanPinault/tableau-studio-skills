@@ -26,6 +26,12 @@ re-deriving the datasource pick, signal, or window from scratch — this mirrors
 the step-5 feed_data reuse check, applied to the whole build, not just the
 feeder sheet.
 
+Only a run the user asks to resume or continue is picked up this way. For a
+fresh "build a scrollytelling demo", treat every file in the scratch dir as stale:
+delete them before building and always copy the template from `assets/public/`,
+never from a leftover `story.tpl.html` (a run reused one and published the
+previous story's title in the top bar).
+
 ## 1. Connect the published datasource — [needs you]
 
 The datasource question is pinned in `SKILL.md` Step 0 item 7 and was already
@@ -123,7 +129,9 @@ action triggers corruption if it recurs, instead of losing the whole dashboard.
   - **The page matches the probe:** a percent or rate field shown on the page
     (Discount) uses the same per-period mean as the probe, so the page and the
     proposal show one figure, never a row-level mean beside a per-period one. If
-    they differ, say so before publishing.
+    they differ, say so before publishing. The same holds for the headline
+    change: the page headline shows the proposal's lead-signal figure, never a
+    different span's figure.
   - **Percent and rate fields** (such as Discount) use the field's per-period
     AVG as the datasource returns it, then the plain mean of those per-period
     values across the block; never weight by row counts.
@@ -147,7 +155,10 @@ action triggers corruption if it recurs, instead of losing the whole dashboard.
     datasource.
   - **Qualification is mechanical, never by judgment.** For every numeric measure,
     compute the relative change between the average of the first 14 periods and the
-    average of the last 14 periods at the finest grain. Over the locked threshold
+    average of the last 14 periods at the finest grain. When a move start exists,
+    take both from the story window (its first 14 and last 14 periods), because
+    that is the span the page shows; with no move start, take them from the full
+    history. Over the locked threshold
     means it qualifies, even if its shape is gradual or stepped; under means noise.
     Compute the 3 SD move start numerically, never by eye. In the proposal, list
     every measure with its change and its aggregation rule, and say "qualifies" or
@@ -183,7 +194,14 @@ action triggers corruption if it recurs, instead of losing the whole dashboard.
      standard deviation of the lead measure over the first 14 periods. Move
      start: the first period from which the 7-period trailing average of the lead
      measure stays more than 3 baseline standard deviations away from the
-     baseline mean, in the direction of the move, through the latest period. If
+     baseline mean, in the direction of the move, through the latest period. Exact
+     definitions: the baseline standard deviation is the sample standard
+     deviation (divide by n-1); the trailing average at period i is the mean of
+     periods i-6 through i (the first 6 periods have none); a period qualifies
+     when (trailing average - baseline mean), signed in the direction of the
+     move, exceeds 3 baseline SD; the move start is the first period in the
+     final unbroken run of qualifying periods that reaches the latest period
+     (period i, the last day of its 7-period span, not the span's first day). If
      no period qualifies there is no move start (a steady climb with seasonal
      spikes often has none): say so with the numbers and go to step 3b.
   3. Window start: 14 periods before the move start. Window end: the latest
@@ -272,7 +290,10 @@ action triggers corruption if it recurs, instead of losing the whole dashboard.
     then by relative change, largest first. The closing is "What to review"
     (executive) or "What this means" (analyst). The story title is
     "<Datasource name exactly as listed> <lead measure> brief" for a Report brief
-    (for example "Superstore Datasource Profit brief"), and the audience never changes the
+    (for example "Superstore Datasource Profit brief"); when the listed name is
+    over 25 characters, use only the part before " - " (or the first 25
+    characters at a word break if it has none), so "Logistics - Clinical Courier
+    Operations" gives "Logistics Courier Turnover Rate brief". The audience never changes the
     chapter order. Numbers in titles use the yearly figures once the seasonality
     check ran.
   - Plus one opening chapter that frames the question and one closing chapter

@@ -3,6 +3,13 @@
 The current version is in the `VERSION` file. The skill offers to update itself
 when launched; or replace this folder with the newer one and run `/reload-skills`.
 
+## 1.4.23 — 2026-11-04
+
+- `probe_signal.py` prints the proposal lines (measures, lead signal, move start, window,
+  chapters, table rows) for the agent to copy; the 1.4.22 run miscounted the chapters line.
+- Caveats: "no gaps and no nulls" and rise/fall restatements are banned.
+- Declined shell prompt: ask for approval, never offer hosted mode as a workaround.
+
 ## 1.4.22 — 2026-11-04
 
 - New `scripts/probe_signal.py` computes verdicts, lead signal, move start, window and

@@ -206,6 +206,27 @@ def main():
             if (ch[x] > DIVERGE and ch[y] < -DIVERGE) or (ch[y] > DIVERGE and ch[x] < -DIVERGE):
                 div.append({"pair": [x, y], "changes": [ch[x], ch[y]]})
     out["divergent_pairs"] = div
+    def pct(x):
+        return "n/a" if x is None else "%+.1f%%" % (x * 100)
+
+    q = out["qualifying"]
+    if q == 0:
+        chapters = "none (no qualifying measure)"
+    elif q <= 4:
+        chapters = "%d (%d qualifying measures + opening and closing)" % (q + 2, q)
+    else:
+        chapters = ("6 (%d qualifying measures, the 4 strongest get chapters "
+                    "+ opening and closing)" % q)
+    ls = out["lead_signal"]
+    out["proposal_lines"] = {
+        "measures_probed": "%d of %d (%s)" % (len(ms), len(ms), ", ".join(m["name"] for m in ms)),
+        "lead_signal": ("%s, %s" % (ls["measure"], pct(ls["change"]))) if ls else "none",
+        "move_start": out["move_start"] or "none",
+        "window": "%s to %s" % (out["window"]["start"], out["window"]["end"]),
+        "chapters": chapters,
+        "table": [[r["measure"], r["rule"], pct(r["deciding_change"]), r["verdict"]]
+                  for r in rows_out],
+    }
     out["not_covered"] = "concentration and anomaly checks are separate queries"
     print(json.dumps(out, indent=1))
 

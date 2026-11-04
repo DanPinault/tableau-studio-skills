@@ -166,7 +166,8 @@ before sending the proposal. The wording here is pinned.
       past today's date, any other data-quality issue (never an explanation of a
       verdict, a calculation or a rule (for example "Cost Per Stop is shown as an
       average" is banned), never a "not checked" or "none found"
-      note, never a statement of what you will build or filter; with no such issue there are two bullets; no figures in any caveat). Anomaly counts and measure rankings are not
+      note (so "no gaps and no nulls" is banned), never a restatement of which
+      measures rise or fall, never a statement of what you will build or filter; with no such issue there are two bullets; no figures in any caveat). Anomaly counts and measure rankings are not
       caveats and are not in the proposal. Nothing sits between the table and
       **Caveats**.
    5. The window confirmation question, last, word for word: "Use the full

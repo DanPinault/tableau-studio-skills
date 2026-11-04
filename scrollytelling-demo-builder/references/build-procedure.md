@@ -190,7 +190,9 @@ action triggers corruption if it recurs, instead of losing the whole dashboard.
   It applies the thresholds and the window rule below and prints the null rate,
   the first-14 and last-14 changes, the yearly comparison when there is no move
   start, the verdicts, the lead signal, the move start, the window and any
-  divergent pairs. Its output fills the proposal; if it disagrees with a number
+  divergent pairs. Copy the Measures, Lead signal, Move start date, Window and Chapters lines
+  and the table rows from its `proposal_lines` output exactly; never compose them
+  yourself. Its output fills the proposal; if it disagrees with a number
   you computed another way, the script is right. It does not cover concentration
   or anomaly checks, which stay separate queries. Run it from the folder that
   holds the saved rows, with every path as its own literal argument.

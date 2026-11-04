@@ -119,7 +119,8 @@ view") and `references/build-procedure.md` step 4.
 | Build, package, publish (packaged) | `assets/build_standalone.py`, `assets/package_extension.py` | Order: check, query, build, package, publish. |
 | Questions in Step 0 | closing chat message | Not `ask-user`. |
 
-Never show tool names, script names or JSON to the user; describe outcomes instead.
+Never show tool names, script names or JSON to the user; describe outcomes instead
+(say "I'm computing the verdicts", not that you are running a script).
 
 ## Pre-delivery gate (run before saying Done)
 
@@ -188,6 +189,7 @@ again." Same rules: nothing after it, sent once.
 | Site tools fail with a sign-in or registration error | Studio's Cloud sign-in expired | Ask the user to sign in again in Studio and restart the agent; do not retry |
 | Queries worked, then fail mid-run | Connection dropped or the datasource was republished | Re-run the metadata read once; if fields changed, re-probe from the start; if it still fails, stop and report what was built |
 | Fewer rows than expected, or a measure is all null | Row-level security or a permission limit for this user | Say the story reflects only the rows this user can see; ask whether to continue or use another datasource |
+| A shell command is declined or the prompt times out | The user has not approved it yet | Say what is waiting and ask them to approve it; do not offer hosted mode as a way around it (it needs the same scripts) |
 | Dashboard or tile errors in hosted mode | Automated placement corrupted it | Stop; follow failure mode §A and hand placement to the user |
 
 ## Common mistakes

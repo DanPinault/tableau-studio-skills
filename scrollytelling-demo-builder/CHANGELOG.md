@@ -3,6 +3,13 @@
 The current version is in the `VERSION` file. The skill offers to update itself
 when launched; or replace this folder with the newer one and run `/reload-skills`.
 
+## 1.4.10 — 2026-11-04
+
+- Both bundled templates now draw and label dates in UTC (utcFormat, scaleUtc and a
+  UTC "as of" date), because the live read gives midnight-UTC dates and local
+  formatting showed them a day early in time zones west of UTC. The hosted run
+  fixed this in its own page; this puts the fix in the templates.
+
 ## 1.4.9 — 2026-11-04
 
 - Hosted end-to-end run: no figures in caveats, a pending user check keeps the

@@ -785,12 +785,12 @@ function drawDiverge(step){
   const W=box.width, H=box.height;
   const m={t:26,r:64,b:36,l:52};
   const dv=D.diverge; const dates=dv.dates.map(s=>new Date(s));
-  const x=d3.scaleTime().domain(d3.extent(dates)).range([m.l,W-m.r]);
+  const x=d3.scaleUtc().domain(d3.extent(dates)).range([m.l,W-m.r]);
   const yM=d3.scaleLinear().domain([12,20]).range([H-m.b,m.t]);          // margin %  (left)
   const rExt=d3.extent(dv.rpl); const pad=(rExt[1]-rExt[0])*0.6+2;
   const yR=d3.scaleLinear().domain([rExt[0]-pad,rExt[1]+pad]).range([H-m.b,m.t]); // revenue $ (right)
   // axes
-  svg.append("g").attr("class","axis").attr("transform",`translate(0,${H-m.b})`).call(d3.axisBottom(x).ticks(5).tickFormat(d3.timeFormat("%b %d")));
+  svg.append("g").attr("class","axis").attr("transform",`translate(0,${H-m.b})`).call(d3.axisBottom(x).ticks(5).tickFormat(d3.utcFormat("%b %d")));
   svg.append("g").attr("class","axis").attr("transform",`translate(${m.l},0)`).call(d3.axisLeft(yM).ticks(5).tickFormat(d=>d+"%"));
   svg.append("g").attr("class","axis").attr("transform",`translate(${W-m.r},0)`).call(d3.axisRight(yR).ticks(5).tickFormat(d=>"$"+d));
   const mLine=d3.line().x((d,i)=>x(dates[i])).y(d=>yM(d)).curve(d3.curveMonotoneX);
@@ -877,7 +877,7 @@ function drawDiverge(step){
       dotR.attr("cx",px).attr("cy",yR(dv.rpl[i])).attr("opacity",1);
       if(step>=1) dotM.attr("cx",px).attr("cy",yM(dv.margin[i])).attr("opacity",1); else dotM.attr("opacity",0);
       tt.style.opacity=1; tt.style.left=(ev.clientX+14)+"px"; tt.style.top=(ev.clientY-10)+"px";
-      document.getElementById("ttD").textContent=d3.timeFormat("%b %d")(dates[i]);
+      document.getElementById("ttD").textContent=d3.utcFormat("%b %d")(dates[i]);
       document.getElementById("ttV").innerHTML=
         '<span style="color:var(--white)">$'+Math.round(dv.rpl[i])+'</span> <span style="color:var(--dim);font-size:11px;font-weight:600">rev/load</span>'
         + (step>=1 ? '<br><span style="color:var(--magenta)">'+dv.margin[i].toFixed(1)+'%</span> <span style="color:var(--dim);font-size:11px;font-weight:600">margin</span>' : '');
@@ -1090,9 +1090,9 @@ function drawUnbilledTrend(){
   const svg=d3.select("#unbilledTrend"); svg.selectAll("*").remove(); ensureDefs(svg);
   const box=svg.node().getBoundingClientRect(); const W=box.width||900, H=box.height||220;
   const m={t:18,r:20,b:30,l:52}; const data=D.unbilledPace; const dates=data.map(d=>new Date(d.date));
-  const x=d3.scaleTime().domain(d3.extent(dates)).range([m.l,W-m.r]);
+  const x=d3.scaleUtc().domain(d3.extent(dates)).range([m.l,W-m.r]);
   const y=d3.scaleLinear().domain([d3.min(data,d=>d.value)*.9, d3.max(data,d=>d.value)*1.06]).range([H-m.b,m.t]);
-  svg.append("g").attr("class","axis").attr("transform",`translate(0,${H-m.b})`).call(d3.axisBottom(x).ticks(5).tickFormat(d3.timeFormat("%b %d")));
+  svg.append("g").attr("class","axis").attr("transform",`translate(0,${H-m.b})`).call(d3.axisBottom(x).ticks(5).tickFormat(d3.utcFormat("%b %d")));
   svg.append("g").attr("class","axis").attr("transform",`translate(${m.l},0)`).call(d3.axisLeft(y).ticks(4).tickFormat(d=>"$"+d+"K"));
   const line=d3.line().x((d,i)=>x(dates[i])).y(d=>y(d.value)).curve(d3.curveMonotoneX);
   const area=d3.area().x((d,i)=>x(dates[i])).y0(H-m.b).y1(d=>y(d.value)).curve(d3.curveMonotoneX);
@@ -1108,7 +1108,7 @@ function drawUnbilledTrend(){
     .on("mousemove",(ev)=>{ const mx=d3.pointer(ev)[0]; const dt=x.invert(mx); let i=bis(dates,dt); i=Math.max(0,Math.min(data.length-1,i));
       focus.attr("x1",x(dates[i])).attr("x2",x(dates[i])).attr("opacity",.5);
       tt.style.opacity=1; tt.style.left=(ev.clientX+14)+"px"; tt.style.top=(ev.clientY-10)+"px";
-      document.getElementById("ttD").textContent=d3.timeFormat("%b %d")(dates[i]);
+      document.getElementById("ttD").textContent=d3.utcFormat("%b %d")(dates[i]);
       document.getElementById("ttV").textContent="$"+Math.round(data[i].value)+"K / mo"; })
     .on("mouseleave",()=>{ focus.attr("opacity",0); tt.style.opacity=0; });
 }
@@ -1366,7 +1366,7 @@ function contractFromRows(rows, cols, captureLive){
       out.unbilledPace=days.map((t,i)=>{ const s=dUnb.slice(Math.max(0,i-29),i+1);
         return {date:iso(t), value:+(s.reduce((x,y)=>x+y,0)/s.length*30/1000).toFixed(1)}; });
 
-      out.asof=new Date(maxT).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
+      out.asof=new Date(maxT).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric",timeZone:"UTC"});
       out.source="live-extension";
       return out;
     }
@@ -1553,13 +1553,13 @@ function drawExTrend(data){
   const svg=d3.select("#exTrend"); svg.selectAll("*").remove(); ensureDefs(svg);
   if(!data || !data.length) return;
   const W=1000,H=300,m={t:16,r:20,b:30,l:52};
-  const x=d3.scaleTime().domain(d3.extent(data,d=>d.date)).range([m.l,W-m.r]);
+  const x=d3.scaleUtc().domain(d3.extent(data,d=>d.date)).range([m.l,W-m.r]);
   const lo=d3.min(data,d=>d.value), hi=d3.max(data,d=>d.value), pad=(hi-lo)*0.3+0.5;
   const y=d3.scaleLinear().domain([lo-pad,hi+pad]).range([H-m.b,m.t]);
   const grad=svg.select("defs.shared").append("linearGradient").attr("id","xtg").attr("x1","0").attr("x2","0").attr("y1","0").attr("y2","1");
   grad.append("stop").attr("offset","0%").attr("stop-color","#F25FD0").attr("stop-opacity",.34);
   grad.append("stop").attr("offset","100%").attr("stop-color","#F25FD0").attr("stop-opacity",0);
-  svg.append("g").attr("class","axis").attr("transform",`translate(0,${H-m.b})`).call(d3.axisBottom(x).ticks(6).tickFormat(d3.timeFormat("%b %d")));
+  svg.append("g").attr("class","axis").attr("transform",`translate(0,${H-m.b})`).call(d3.axisBottom(x).ticks(6).tickFormat(d3.utcFormat("%b %d")));
   svg.append("g").attr("class","axis").attr("transform",`translate(${m.l},0)`).call(d3.axisLeft(y).ticks(5).tickFormat(d=>d+"%"));
   const area=d3.area().x(d=>x(d.date)).y0(H-m.b).y1(d=>y(d.value)).curve(d3.curveMonotoneX);
   const line=d3.line().x(d=>x(d.date)).y(d=>y(d.value)).curve(d3.curveMonotoneX);

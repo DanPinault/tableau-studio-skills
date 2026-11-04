@@ -151,6 +151,8 @@ Never show tool names, script names or JSON to the user; describe outcomes inste
     check script tests this for a sticky header, and a published run is looked at
     in a frame about 450 px tall when the user can open it.
 
+Run all eight items before the first publish; the report's Verified lines name each
+item as passed, and an item "not run" is a failed item, not a footnote.
 If any gate item fails, fix that item and re-run the whole gate. Never report Done
 with a failed item, or with a check you could not do and still need the user for
 (for example Live mode after a fix); that turn is Blocked until they confirm.

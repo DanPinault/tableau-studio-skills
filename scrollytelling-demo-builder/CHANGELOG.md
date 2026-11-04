@@ -3,6 +3,12 @@
 The current version is in the `VERSION` file. The skill offers to update itself
 when launched; or replace this folder with the newer one and run `/reload-skills`.
 
+## 1.4.26 — 2026-11-04
+
+- Style guide: both the title bar and the chapter links row are pinned (users asked for the
+  chips to stay), both static in a short frame.
+- Gate: all eight items run before the first publish; "not run" counts as failed.
+
 ## 1.4.25 — 2026-11-04
 
 - Style guide: pin a compact title/toggle bar (about 56px), let the chapter chips scroll away,

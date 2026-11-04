@@ -210,14 +210,14 @@ the single reference for the feeder's shape; the build procedure points here.
 
 ## Rules from published runs (keep in every style)
 
-- **Header and chapter links:** pin only a compact bar (title, Demo/Live toggle
-  and Explore button, one row, no wrapping, about 56px tall) with `position:sticky`.
-  The chapter links sit in a second row that scrolls away with the page, on one
-  row that scrolls sideways. Give chapter anchors a `scroll-margin-top` equal to
-  the bar height. The bar is not sticky when the frame is short (height under
-  600px: `@media (max-height:600px)` sets `position:static`). A wrapped sticky
-  header filled a short Cloud frame so a reader saw only four of six chapters, and
-  a full banner of about 120px was reported as scrolling away when left unpinned.
+- **Header and chapter links:** pin both rows with `position:sticky`: a compact
+  title bar (title, Demo/Live toggle, Explore button, one row, about 56px) and
+  directly under it the chapter links row (about 44px, `top:56px`, one row that
+  scrolls sideways, no wrapping). Give chapter anchors a `scroll-margin-top` equal
+  to both rows together (about 100px). Both rows are `position:static` when the
+  frame is short (`@media (max-height:600px)`). A wrapped sticky header filled a
+  short Cloud frame so a reader saw only four of six chapters, and readers asked
+  for the chapter links to stay visible while scrolling.
 - **Axes:** a value axis spans the data's real minimum and maximum, and goes below
   zero when any value is negative. A multi-year monthly axis labels one tick per
   year so labels never run together.

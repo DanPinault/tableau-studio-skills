@@ -26,3 +26,12 @@ Used by skill-grader-desktop to cross-check skills against known gaps. Each entr
 
 - **Edits to a new feeder worksheet can start failing partway.** After the first field applied, further edits were rejected with a file-access error, and a fresh copy of the sheet did not help. The cause is unconfirmed (seen once). Workaround: stop after two rejections and give the user the manual recipe for the sheet.
 - **The open workbook may be connected to a different datasource than the one the story uses.** The feeder sheet must come from the chosen datasource, so connect it first with the workbook CLI; do not substitute another source.
+
+## Gap seen in the 1.4.4 hosted test (2026-11-04)
+
+- The apply step for a datasource or worksheet edit can reject its own output
+  file as "hard-linked", including a plain copy and cache files the tool wrote
+  itself. Two rejections end the attempt. The skill hands the user the manual
+  recipe (Data > New Data Source for the connection; the feed_data shelf recipe
+  for the sheet). Cause unconfirmed; it looks like a problem in the Desktop
+  cache folder.

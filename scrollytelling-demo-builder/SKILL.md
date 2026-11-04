@@ -265,15 +265,16 @@ with a failed item; report Blocked or Working around it and name the item.
    1. One opening sentence: what was probed and whether there is a clear signal.
    2. **Checklist**, one line each: Grain; Measures probed ("N of N (names)");
       Lead signal (field name and relative change, or "none"); Move start date
-      (or "none" with the one-line reason); Window (start to end); Chapters
+      (or "none" with the one-line reason, no baseline numbers); Window (start to end); Chapters
       (for example "6 (4 qualifying measures + opening and closing)", with the
       real counts); Audience (only when
-      assumed: "Assumed an executive reader").
+      assumed, labelled: "Audience: Assumed an executive reader").
    3. The measures table with the pinned columns, one row per measure. Every
       percentage has a sign and one decimal (+75.3%, not +75%).
    4. **Caveats**, at most three bullets, in this order when they apply:
-      seasonality (and what the yearly check showed), data past today's date,
-      any other data-quality issue. Anomaly counts and measure rankings are not
+      seasonality (and what the yearly check showed, without yearly values), data
+      past today's date, any other data-quality issue (never an explanation of a
+      verdict). Anomaly counts and measure rankings are not
       caveats and are not in the proposal. Nothing sits between the table and
       **Caveats**.
    5. The window confirmation question, last, word for word: "Use the full

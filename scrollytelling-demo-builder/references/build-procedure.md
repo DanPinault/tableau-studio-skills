@@ -124,7 +124,9 @@ action triggers corruption if it recurs, instead of losing the whole dashboard.
     AVG as the datasource returns it, then the plain mean of those per-period
     values across the block; never weight by row counts.
   - **Measures probed:** count every numeric measure the datasource lists,
-    including calculated ratio measures (computed as the sum of the numerator over
+    plus a Profit Ratio whenever the datasource has both a Profit and a Sales
+    measure, even if it lists none (a probe measure, not a new datasource
+    field; say so in its Rule column). Include calculated ratio measures (computed as the sum of the numerator over
     the sum of the denominator over the whole 14-period block; never the average
     of per-period ratios, which blows up when a period's denominator is near zero
     and gives a different answer each run). The proposal table's columns are

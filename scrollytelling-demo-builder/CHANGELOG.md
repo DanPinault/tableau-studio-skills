@@ -3,6 +3,18 @@
 The current version is in the `VERSION` file. The skill offers to update itself
 when launched; or replace this folder with the newer one and run `/reload-skills`.
 
+## 1.4.6 — 2026-11-04
+
+- Proposal wording pins from the 1.4.5 run: the Audience line keeps its label,
+  the Move start line carries no baseline numbers, and caveats carry no yearly
+  values or verdict explanations.
+
+## 1.4.5 — 2026-11-04
+
+- Profit Ratio is always probed when a datasource has both Profit and Sales, so
+  the measure count no longer varies between runs (the hosted test counted 4 of
+  4 where an earlier run counted 5 of 5).
+
 ## 1.4.4 — 2026-11-04
 
 - The description now sends a plain queryAsync worksheet app to author-data-app

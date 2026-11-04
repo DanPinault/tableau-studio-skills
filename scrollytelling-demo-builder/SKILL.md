@@ -352,6 +352,9 @@ again." Same rules: nothing after it, sent once.
 | PAT rejected or expired | Sign-in or permission problem | Ask the user to refresh the PAT; never take the secret in chat |
 | Publish fails or partly lands | Workbook may exist without a working view | Do not re-run blindly; check the project for the workbook, report what exists, ask before overwriting |
 | Page shows SEED numbers on Cloud | Live read failed (alias, datasource name or Packages) | Fix the query alias or name, rebuild, republish |
+| Site tools fail with a sign-in or registration error | Studio's Cloud sign-in expired | Ask the user to sign in again in Studio and restart the agent; do not retry |
+| Queries worked, then fail mid-run | Connection dropped or the datasource was republished | Re-run the metadata read once; if fields changed, re-probe from the start; if it still fails, stop and report what was built |
+| Fewer rows than expected, or a measure is all null | Row-level security or a permission limit for this user | Say the story reflects only the rows this user can see; ask whether to continue or use another datasource |
 | Dashboard or tile errors in hosted mode | Automated placement corrupted it | Stop; follow failure mode §A and hand placement to the user |
 
 ## Common mistakes

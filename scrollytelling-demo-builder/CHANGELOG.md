@@ -3,6 +3,10 @@
 The current version is in the `VERSION` file. The skill offers to update itself
 when launched; or replace this folder with the newer one and run `/reload-skills`.
 
+## 1.4.20 — 2026-11-04
+
+- Error playbook: expired sign-in, mid-run query failure and row-level security rows.
+
 ## 1.4.19 — 2026-11-04
 
 - The datasource question starts from the open workbook: a connected published

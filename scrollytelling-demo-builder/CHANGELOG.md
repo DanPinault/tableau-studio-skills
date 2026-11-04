@@ -3,6 +3,13 @@
 The current version is in the `VERSION` file. The skill offers to update itself
 when launched; or replace this folder with the newer one and run `/reload-skills`.
 
+## 1.4.4 — 2026-11-04
+
+- The description now sends a plain queryAsync worksheet app to author-data-app
+  and a single custom viz or story-less dashboard extension to author-extension,
+  because Studio now ships both and this skill's packaged mode looks like the
+  first one.
+
 ## 1.4.3 — 2026-11-02
 
 From a full packaged run (it published; the user's check on Cloud found defects the

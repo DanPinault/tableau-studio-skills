@@ -268,8 +268,8 @@ Name the item.
 2. The proposal has exactly these parts, in this order, and nothing else:
    1. One opening sentence: what was probed and whether there is a clear signal.
    2. **Checklist**, one line each: Grain; Measures probed ("N of N (names)");
-      Lead signal (field name and relative change, or "none"); Move start date
-      (or "none" with the one-line reason, no baseline numbers); Window (start to end); Chapters
+      Lead signal (field name and relative change, or "none"); the line is
+      labelled "Move start date:" and gives the date (or "none" with the one-line reason, no baseline numbers); Window (start to end); Chapters
       (for example "6 (4 qualifying measures + opening and closing)", with the
       real counts; when more than 4 qualify: "6 (N qualifying measures, the 4
       strongest get chapters + opening and closing)", and that is the only place
@@ -277,8 +277,9 @@ Name the item.
       assumed, labelled: "Audience: Assumed an executive reader").
    3. The measures table with the pinned columns, one row per measure. The Rule
       column is only the aggregation (SUM, AVG, or SUM(a) / SUM(b)), plus "probe
-      measure" for a derived Profit Ratio; no other words. Every percentage has a
-      sign and one decimal (+75.3%, not +75%). Divergent pairs, if any, are
+      measure" for a derived Profit Ratio; no other words. Every change cell is only
+      the signed percentage with one decimal (+75.3%, not +75%, and no "from -> to"
+      values). Divergent pairs, if any, are
       named on the Lead signal line or left for the build, never between the
       table and **Caveats**.
    4. **Caveats**, at most three bullets, in this order when they apply:

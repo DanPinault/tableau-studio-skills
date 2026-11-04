@@ -3,6 +3,11 @@
 The current version is in the `VERSION` file. The skill offers to update itself
 when launched; or replace this folder with the newer one and run `/reload-skills`.
 
+## 1.4.13 — 2026-11-04
+
+- Change cells show only the signed percentage (a run showed "3.3% -> 4.0%
+  (+23.0%)"), and the Move start line keeps its "Move start date:" label.
+
 ## 1.4.12 — 2026-11-04
 
 - Logistics repeat runs matched on every number; wording pins from them: Rule

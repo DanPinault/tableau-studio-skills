@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Pre-delivery check for a built scrolly story page (no network, stdlib only).
 
-usage: check_story.py <story.html> [--query q.json] [--probe probe.json] [--chrome <path>]
+usage: check_story.py <story.html> [--query q.json] [--probe probe.json] [--audience executive|analyst] [--chrome <path>]
 
 Static checks on the HTML, then (if Chrome or Edge is installed) renders the page
 headless and checks the live DOM, so every chapter is looked at, not just the
@@ -29,7 +29,11 @@ CHROMES = [
     "C:/Program Files/Google/Chrome/Application/chrome.exe",
     "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
 ]
-BAD_TEXT = re.compile(r"\bNaN\b|\bundefined\b|\[object Object\]|\{\{|\}\}|\bInfinity\b")
+# words of chapter body (titles, charts and buttons excluded); see build-procedure.md step 3
+# set just above the COO and CFO templates, measured 2026-11-10 (opening 127/175, middle 99-183, closing 75/88)
+BUDGET = {"executive": {"open": 180, "body": 130, "close": 100},
+          "analyst": {"open": 220, "body": 180, "close": 130}}
+BAD_TEXT =re.compile(r"\bNaN\b|\bundefined\b|\[object Object\]|\{\{|\}\}|\bInfinity\b")
 
 
 class Scan(HTMLParser):
@@ -124,6 +128,12 @@ def main(argv):
     probe = None
     if "--probe" in argv:
         probe = json.load(open(argv[argv.index("--probe") + 1]))
+    audience = None
+    if "--audience" in argv:
+        audience = argv[argv.index("--audience") + 1]
+        if audience not in BUDGET:
+            print("--audience must be executive or analyst")
+            return 2
     if "--chrome" in argv:
         chrome_arg = argv[argv.index("--chrome") + 1]
     html = open(path, encoding="utf-8").read()
@@ -176,6 +186,17 @@ def main(argv):
             thin = [i + 1 for i, s in enumerate(secs) if len(re.sub(r"<[^>]+>", " ", s).split()) < 12]
             add("every chapter has text after render", secs and not thin,
                 f"{len(secs)} sections; thin: {thin}")
+            if audience:
+                budget = BUDGET[audience]
+                over = []
+                for i, s in enumerate(secs):
+                    s = re.sub(r"(?is)<(svg|canvas|button|h[1-4])\b.*?</\1>", " ", s)
+                    words = len(re.sub(r"<[^>]+>", " ", s).split())
+                    cap = budget["open"] if i == 0 else budget["close"] if i == len(secs) - 1 else budget["body"]
+                    if words > cap:
+                        over.append(f"{i + 1}: {words}>{cap}")
+                add("every chapter body is within its word budget (%s)" % audience, not over,
+                    "; ".join(over))
             nosvg = [i + 1 for i, s in enumerate(secs) if not re.search(r"<(svg|canvas)\b", s)]
             add("at least half the sections carry a chart (svg or canvas)",
                 secs and len(nosvg) <= len(secs) / 2,
@@ -188,6 +209,9 @@ def main(argv):
     add("no phrases copied from a vendored template", not phr,
         "; ".join(phr[:3]) + (" ..." if len(phr) > 3 else ""))
     add("no decimals left over from a vendored template", not num, ", ".join(num[:6]))
+    internal = sorted(set(re.findall(
+        r"\bSEED\b|feed_data|queryAsync|getSummaryDataAsync|\bTODO\b|\bTBD\b|lorem ipsum", page_text)))
+    add("no internal terms or placeholders in the visible text", not internal, ", ".join(internal))
     if probe:
         ls = probe.get("lead_signal")
         if ls and ls.get("change") is not None:

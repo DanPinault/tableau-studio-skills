@@ -22,18 +22,11 @@ The short list is in SKILL.md; this is the full text of each rule.
   prompts in the user's terminal) or the user's own `TABLEAU_PAT_SECRET` env var.
   Never ask for a secret in chat or echo one, and never write site names, LUIDs or
   PAT details into this skill's folder. Scratch and config files only.
-- **The goal is not a like-for-like reproduction of the vendored sample
-  dashboards.** The vendored COO/CFO templates are a style and mechanics
-  reference (animation, D3 patterns, Demo/Live toggle, prose-binding), not a
-  fixed page structure to fill in. The signal actually found in the data, and
-  who the story is for, should determine which acts/chapters exist, how many,
-  and in what order — not the sample's chapter list. Drop a template chapter
-  that has no honest analog in the real data (already required in step 4);
-  also feel free to reorder, merge, split, or add a chapter if that's what the
-  real story and audience call for, rather than defaulting to the template's
-  shape.
 - **The vendored templates are inspiration for mechanics only, never a source
-  of numbers, fields, or story content.** Start from `assets/public/coo-brief.html`
+  of numbers, fields, or story content, and the goal is not a like-for-like
+  reproduction of them.** The signal found in the data and the audience decide
+  which chapters exist, how many and in what order; drop a template chapter with
+  no honest analog in the real data. Start from `assets/public/coo-brief.html`
   or `assets/public/cfo-brief.html` purely for their code plumbing —
   `readFromWorksheet`/`readPackagedTable`/`contractFromRows`/Demo-Live-toggle/D3 draw patterns.
   Keep the self-contained build discipline (0 external `<script src>`). Every

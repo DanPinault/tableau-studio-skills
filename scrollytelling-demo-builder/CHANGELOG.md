@@ -3,6 +3,14 @@
 The current version is in the `VERSION` file. The skill offers to update itself
 when launched; or replace this folder with the newer one and run `/reload-skills`.
 
+## 1.4.28 — 2026-11-10
+
+- Packaged mode asks, with the project confirmation, whether the user wants the Tableau Agent
+  (it runs only on a dashboard) and, if so, publishes the story plus a dashboard holding it.
+  `package_extension.py build --dashboard` writes the dashboard; `publish` then shows tabs, prints
+  the dashboard view URL and renders that view. Users are told the Dashboard Overview and
+  Dashboard Insights buttons won't work, but they can still ask questions.
+
 ## 1.4.27 — 2026-11-04
 
 - `check_story.py` fails a page that repeats phrases or decimals from a vendored template,

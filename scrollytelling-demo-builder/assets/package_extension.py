@@ -243,11 +243,55 @@ def slug(name):
     return s
 
 
-def twb_xml(name, pkg_id, version, ds_name, content_url, host, site):
+def dashboard_xml(name, guid):
+    """One full-size dashboard holding the story sheet (zone layout as Desktop writes it)."""
+    a = quoteattr
+    return f"""  <dashboards>
+    <dashboard enable-sort-zone-taborder='true' name={a(name + ' Dashboard')}>
+      <style />
+      <size sizing-mode='automatic' />
+      <zones>
+        <zone h='100000' id='9' type-v2='layout-basic' w='100000' x='0' y='0'>
+          <zone h='100000' id='11' param='vert' type-v2='layout-flow' w='100000' x='0' y='0'>
+            <zone h='100000' id='10' name={a(name)} w='100000' x='0' y='0'>
+              <layout-cache type-h='scalable' type-w='fixed' />
+              <zone-style>
+                <format attr='border-color' value='#000000' />
+                <format attr='border-style' value='none' />
+                <format attr='border-width' value='0' />
+                <format attr='margin' value='4' />
+              </zone-style>
+            </zone>
+          </zone>
+        </zone>
+      </zones>
+      <simple-id uuid={a(guid())} />
+    </dashboard>
+  </dashboards>
+"""
+
+
+def dashboard_window_xml(name, guid):
+    a = quoteattr
+    return f"""    <window class='dashboard' maximized='true' name={a(name + ' Dashboard')}>
+      <viewpoints>
+        <viewpoint name={a(name)}>
+          <zoom type='entire-view' />
+        </viewpoint>
+      </viewpoints>
+      <active id='-1' />
+      <simple-id uuid={a(guid())} />
+    </window>
+"""
+
+
+def twb_xml(name, pkg_id, version, ds_name, content_url, host, site, dashboard=False):
     a = quoteattr
     ds_ref = f"sqlproxy.{uuid.uuid4().hex[:28]}"
     url = f"tableaulocalext:///{pkg_id}/content/index.html"
     guid = lambda: "{" + str(uuid.uuid4()).upper() + "}"
+    dash = dashboard_xml(name, guid) if dashboard else ""
+    dash_win = dashboard_window_xml(name, guid) if dashboard else ""
     return f"""<?xml version='1.0' encoding='utf-8' ?>
 
 <workbook original-version='18.1' source-build={a(SOURCE_BUILD)} source-platform='mac' version='18.1' xml:base='https://localhost' xmlns:user='http://www.tableausoftware.com/xml/user'>
@@ -297,7 +341,7 @@ def twb_xml(name, pkg_id, version, ds_name, content_url, host, site):
       <simple-id uuid={a(guid())} />
     </worksheet>
   </worksheets>
-  <windows>
+{dash}  <windows>
     <window class='worksheet' maximized='true' name={a(name)}>
       <cards>
         <edge name='left'>
@@ -310,7 +354,7 @@ def twb_xml(name, pkg_id, version, ds_name, content_url, host, site):
       </cards>
       <simple-id uuid={a(guid())} />
     </window>
-  </windows>
+{dash_win}  </windows>
   <referenced-extensions>
     <referenced-extension>
       <manifest manifest-version='0.1'>
@@ -405,7 +449,8 @@ def cmd_build(args):
     shutil.copyfile(args.html, os.path.join(pkg, "content", "index.html"))
     twb = os.path.join(ws, f"{args.name}.twb")
     with open(twb, "w", encoding="utf-8") as f:
-        f.write(twb_xml(args.name, pkg_id, args.version, ds["name"], ds["contentUrl"], host, site))
+        f.write(twb_xml(args.name, pkg_id, args.version, ds["name"], ds["contentUrl"], host, site,
+                           dashboard=args.dashboard))
     # zip from inside the workspace: entries are "<name>.twb" and "Packages/...", never a parent dir
     twbx = os.path.join(os.path.abspath(args.out_dir), f"{args.name}.twbx")
     with zipfile.ZipFile(twbx, "w", zipfile.ZIP_DEFLATED) as z:
@@ -413,7 +458,7 @@ def cmd_build(args):
             for fn in sorted(files):
                 full = os.path.join(root, fn)
                 z.write(full, os.path.relpath(full, ws))
-    out({"twbx": twbx, "package_id": pkg_id, "datasource": ds["name"],
+    out({"twbx": twbx, "dashboard": args.dashboard, "package_id": pkg_id, "datasource": ds["name"],
          "size_kb": round(os.path.getsize(twbx) / 1024), "workspace": ws})
 
 
@@ -448,10 +493,12 @@ def find_project(s, spec):
 
 def cmd_publish(args):
     name = args.name or os.path.splitext(os.path.basename(args.twbx))[0]
+    with zipfile.ZipFile(args.twbx) as z:
+        has_dash = any(n.endswith(".twb") and b"<dashboards>" in z.read(n) for n in z.namelist())
     s = session(args)
     try:
         project = find_project(s, args.project)
-        payload = json.dumps({"workbook": {"name": name, "showTabs": "false", "project": {"id": project["id"]}}})
+        payload = json.dumps({"workbook": {"name": name, "showTabs": "true" if has_dash else "false", "project": {"id": project["id"]}}})
         b = uuid.uuid4().hex
         with open(args.twbx, "rb") as f:
             blob = f.read()
@@ -468,9 +515,12 @@ def cmd_publish(args):
                "connections": [{"type": c.get("type"), "datasource": c.get("datasource", {}).get("name")}
                                for c in conns],
                "views": [f"{base}/views/{v['contentUrl'].replace('/sheets/', '/')}" for v in views]}
+        if has_dash:
+            res["dashboard_view"] = next((u for v, u in zip(views, res["views"]) if v["name"].endswith(" Dashboard")), None)
         if args.image and views:
             # server-side render of the extension: the proof that the package ran and queried live
-            png = s.rest("GET", f"/views/{views[0]['id']}/image", params={"resolution": "high", "maxAge": 1},
+            shot = next((v for v in views if has_dash and v["name"].endswith(" Dashboard")), views[0])
+            png = s.rest("GET", f"/views/{shot['id']}/image", params={"resolution": "high", "maxAge": 1},
                          raw=True, headers={"Accept": "*/*"}, timeout=300)   # image/png gets a 406
             with open(args.image, "wb") as f:
                 f.write(png)
@@ -493,6 +543,7 @@ def main():
     c = sub.add_parser("build"); c.add_argument("--html", required=True); c.add_argument("--name", required=True)
     c.add_argument("--datasource", required=True, help="exact published datasource name")
     c.add_argument("--out-dir", required=True); c.add_argument("--version", default="1.0.0")
+    c.add_argument("--dashboard", action="store_true", help="also add a dashboard holding the story sheet (needed for the Tableau Agent)")
     c = sub.add_parser("publish"); c.add_argument("--twbx", required=True); c.add_argument("--project", required=True, help="project name, or a path like \"/Parent/Child\" for nested projects")
     c.add_argument("--name"); c.add_argument("--image", help="save a server-side render of the view here (PNG)")
     args = ap.parse_args()

@@ -139,6 +139,30 @@ before sending the proposal. The wording here is pinned.
    the chosen datasource's own entry, never a project's ID.
 
 
+## Packaged only: the Tableau Agent question (asked with the project confirmation)
+
+The Tableau Agent runs only on a dashboard, so a story that should work with it
+needs a dashboard around the story sheet. Ask this once, in the same closing
+message that confirms the target project (build-procedure step 4P.4), word for
+word:
+
+> **Do you want to use the Tableau Agent with this story?**
+> 1. **Story and dashboard**: I publish the story plus a dashboard that holds it. The Tableau Agent only works on a dashboard.
+> 2. **Story only**: no dashboard, so the Tableau Agent won't be available.
+>
+> With the dashboard, the Tableau Agent's Dashboard Overview and Dashboard Insights buttons won't work, but you can still ask it questions.
+>
+> Reply 1 or 2.
+
+Put it in its own paragraph of the closing message, apart from the project
+confirmation, with the question line bold and the two options numbered exactly as
+shown.
+
+Reply handling: "1" (or "dashboard", "yes", "both") builds with the dashboard;
+"2" (or "story only", "no") builds without it. Anything else: ask once more with the
+same wording. Not asked in hosted mode (it already uses a dashboard). Record the
+choice; the completion report repeats the button note when a dashboard was made.
+
 ## Check before sending (Step 0 and the proposal)
 
 

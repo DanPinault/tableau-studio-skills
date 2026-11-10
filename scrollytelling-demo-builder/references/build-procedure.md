@@ -314,6 +314,17 @@ action triggers corruption if it recurs, instead of losing the whole dashboard.
     check ran.
   - Plus one opening chapter that frames the question and one closing chapter
     for implications or actions.
+  - **Locked density per chapter (defaults; the user can override, and you must
+    name the default you used).** Count all text in the chapter except the
+    title, chart text and buttons (KPI figures, captions and callouts count).
+    Set just above the vendored COO and CFO templates, measured 2026-11-10.
+    - Executive: opening at most 180 words, middle chapters at most 130,
+      closing at most 100.
+    - Analyst (provisional, extrapolated): opening at most 220, middle at most
+      180, closing at most 130.
+    - Every figure in the body comes from a queried row (gate item 2). Tone
+      follows the audience; the numbers above do not move with tone.
+    - `check_story.py --audience` enforces these counts.
   - **The limit of 6 holds after the build too.** Do not offer extra chapters or
     follow-up analysis the user did not ask for. If the user asks for another
     chapter, the story keeps 6: say which existing signal chapter it would replace
@@ -407,10 +418,16 @@ commands and failure modes. In order:
 
    Validate it with `package_extension.py query --query <q.json>`. Check the row
    count, keys and magnitudes against your probe before building.
-3. **Build** with `build_standalone.py --template <adapted.html> --packaged --query <q.json> --out <scratch>/story-pkg.html`,
-   then `package_extension.py build --html ... --name "<Story Name>" --datasource "<exact DS name>" --out-dir <scratch>`.
-4. **Confirm the target project with the user** ([needs you]). Then run
-   `package_extension.py publish --twbx ... --project "<project>" --image <scratch>/check.png`.
+3. **Build** the page with `build_standalone.py --template <adapted.html> --packaged --query <q.json> --out <scratch>/story-pkg.html`.
+4. **Confirm the target project and the Tableau Agent choice with the user**
+   ([needs you], one closing message). Ask the Tableau Agent question exactly as
+   pinned in `references/messages.md` ("Packaged only: the Tableau Agent
+   question"); it must be answered before the next command, because it decides
+   how the workbook is packaged.
+   - Package: `package_extension.py build --html ... --name "<Story Name>" --datasource "<exact DS name>" --out-dir <scratch>`,
+     adding `--dashboard` when the user chose the dashboard.
+   - Publish: `package_extension.py publish --twbx ... --project "<project>" --image <scratch>/check.png`.
+     With a dashboard it also shows tabs and prints the `dashboard_view` URL.
    - Expect a single `sqlproxy` connection to the chosen datasource.
    - Re-publishing while iterating overwrites the same workbook and needs no
      re-confirmation.
@@ -420,8 +437,10 @@ commands and failure modes. In order:
      the `query` rows, not the SEED value. A SEED number means the live read
      failed (see the reference's failure modes).
 
-   Then [needs you]: the user opens the printed view URL and checks scrolling,
-   the Demo/Live toggle, and the Explore filters.
+   Then [needs you]: the user opens the printed view URL (the dashboard view when
+   a dashboard was made) and checks scrolling, the Demo/Live toggle, and the
+   Explore filters. With a dashboard, also have them confirm the Tableau Agent
+   opens and answers a question there.
 
 ## 5. Add the feed_data sheet — automatic; dashboard placement is [needs you]
 
@@ -572,14 +591,10 @@ commands and failure modes. In order:
 
 ## Cleanup
 
-Remove scratch under `.build/scrollytelling-demo-builder/` when done. Report what
-landed plainly:
-- **Packaged:** the datasource, the story, the published workbook and view URL,
-  and the package id.
-- **Hosted:** the datasource, the story, the sheet, the dashboard, the host URL
-  and the published view.
-
-Keep the published workbook unless the user asks to remove it.
+Remove scratch under `.build/scrollytelling-demo-builder/` when done, after the
+user confirms the published view. Report with the fixed shape in `SKILL.md`
+("Completion report"). Keep the published workbook unless the user asks to
+remove it.
 
 ## Known failure modes
 

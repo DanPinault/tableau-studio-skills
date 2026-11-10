@@ -8,8 +8,22 @@ hosted mode, packaged mode drops:
 - the external host,
 - the `.trex` placed by hand,
 - the `feed_data` sheet,
-- the dashboard steps,
+- the manual dashboard steps (a dashboard is added for you only when the user wants
+  the Tableau Agent, see below),
 - and the Publish dialog.
+
+## Tableau Agent needs a dashboard
+
+The Tableau Agent runs only on a dashboard, not on a bare worksheet. A story that
+should work with it is therefore published as the story sheet **plus** a dashboard
+that holds it. `package_extension.py build --dashboard` writes that dashboard (one
+full-size zone containing the story sheet, named "<Story Name> Dashboard") into the
+`.twb`, and `publish` then shows tabs and prints the `dashboard_view` URL; the agent
+is used from that view. Ask the user first (`references/messages.md`, "Packaged only:
+the Tableau Agent question"). Tell them, when they take the dashboard, that the Tableau
+Agent's **Dashboard Overview** and **Dashboard Insights** buttons won't work on it,
+but they can still ask it questions. Verified on Tableau Cloud: the dashboard loads and
+the agent runs.
 
 Use hosted mode (build-procedure steps 5–7) only when:
 - the user asks for it,
@@ -103,7 +117,7 @@ python3 assets/package_extension.py check
 python3 assets/package_extension.py datasources --search "<word>"
 python3 assets/package_extension.py query --query <scratch>/q.json
 python3 assets/build_standalone.py --template <scratch>/story.html --packaged --query <scratch>/q.json --out <scratch>/story-pkg.html
-python3 assets/package_extension.py build --html <scratch>/story-pkg.html --name "<Story Name>" --datasource "<exact DS name>" --out-dir <scratch>
+python3 assets/package_extension.py build --html <scratch>/story-pkg.html --name "<Story Name>" --datasource "<exact DS name>" --out-dir <scratch>   # add --dashboard for the Tableau Agent
 python3 assets/package_extension.py publish --twbx "<scratch>/<Story Name>.twbx" --project "<project>" --image <scratch>/check.png
 ```
 

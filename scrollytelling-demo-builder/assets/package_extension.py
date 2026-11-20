@@ -498,7 +498,7 @@ def cmd_publish(args):
     s = session(args)
     try:
         project = find_project(s, args.project)
-        payload = json.dumps({"workbook": {"name": name, "showTabs": "true" if has_dash else "false", "project": {"id": project["id"]}}})
+        payload = json.dumps({"workbook": {"name": name, "showTabs": "true" if (has_dash and not args.hide_tabs) else "false", "project": {"id": project["id"]}}})
         b = uuid.uuid4().hex
         with open(args.twbx, "rb") as f:
             blob = f.read()
@@ -508,6 +508,8 @@ def cmd_publish(args):
                 ).encode() + blob + f"\r\n--{b}--\r\n".encode()
         wb = s.rest("POST", "/workbooks", params={"workbookType": "twbx", "overwrite": "true"}, data=body,
                     headers={"Content-Type": f"multipart/mixed; boundary={b}"}, timeout=600)["workbook"]
+        if args.hide_tabs:   # the upload alone leaves tabs on for a workbook with a dashboard
+            wb = s.rest("PUT", f"/workbooks/{wb['id']}", {"workbook": {"showTabs": "false"}}).get("workbook", wb)
         conns = s.rest("GET", f"/workbooks/{wb['id']}/connections").get("connections", {}).get("connection", [])
         views = s.rest("GET", f"/workbooks/{wb['id']}/views").get("views", {}).get("view", [])
         base = f"{s.server}/#/site/{s.site_url}"
@@ -546,6 +548,7 @@ def main():
     c.add_argument("--dashboard", action="store_true", help="also add a dashboard holding the story sheet (needed for the Tableau Agent)")
     c = sub.add_parser("publish"); c.add_argument("--twbx", required=True); c.add_argument("--project", required=True, help="project name, or a path like \"/Parent/Child\" for nested projects")
     c.add_argument("--name"); c.add_argument("--image", help="save a server-side render of the view here (PNG)")
+    c.add_argument("--hide-tabs", action="store_true", help="publish with the workbook tabs hidden")
     args = ap.parse_args()
     try:
         {"configure": cmd_configure, "store-secret": cmd_store_secret, "check": cmd_check,

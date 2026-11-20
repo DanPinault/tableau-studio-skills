@@ -9,7 +9,7 @@ Commands (each prints one JSON object and exits 0 unless noted):
   check   Compare the local VERSION with the one on GitHub.
           status: up_to_date | update_available | unknown | snoozed
   apply   Replace this skill's folder with the latest copy. The old folder is
-          moved to ~/.tableau-studio-skills-backups/ first.
+          moved to ~/Documents/Tableau Studio Skills Backups/ first.
   snooze  Remember the latest version so check stays quiet until a newer one.
   sums    Maintainers: write SHA256SUMS for this skill folder (run before release).
 
@@ -42,7 +42,7 @@ TIMEOUT = 4  # seconds; a slow network must never stall the skill
 SKILL_DIR = Path(__file__).resolve().parent.parent
 SKILL = SKILL_DIR.name
 STATE = Path.home() / ".tableau-studio-skills-state.json"
-BACKUPS = Path.home() / ".tableau-studio-skills-backups"
+BACKUPS = Path.home() / "Documents" / "Tableau Studio Skills Backups"
 # Testing hook: point at a local checkout of the repo instead of GitHub.
 LOCAL_REPO = os.environ.get("SKILL_UPDATE_LOCAL_REPO")
 
@@ -223,7 +223,7 @@ def cmd_apply():
             new_version = (new / "VERSION").read_text().strip()
         except Exception as e:
             out({"ok": False, "error": f"download failed: {e}"}, 1)
-        BACKUPS.mkdir(exist_ok=True)
+        BACKUPS.mkdir(parents=True, exist_ok=True)
         backup = BACKUPS / f"{SKILL}-{old}-{time.strftime('%Y%m%d-%H%M%S')}"
         staged = SKILL_DIR.parent / f".{SKILL}.incoming"
         if staged.exists():

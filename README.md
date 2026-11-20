@@ -18,7 +18,7 @@ Agent skills for Tableau Studio, one folder per skill. Each folder has a `SKILL.
 Clone straight into your Studio skills folder (it must be empty or not exist yet):
 
 ```bash
-git clone https://github.com/DanPinault/tableau-studio-skills.git "$HOME/Documents/My Tableau Repository (Beta)/Tableau Agent/skills"
+git clone https://github.com/DanPinault/tableau-studio-skills.git "$HOME/Documents/My Tableau Repository/Tableau Agent/skills"
 ```
 
 Then run `/reload-skills` in Tableau Studio.
@@ -32,7 +32,7 @@ If the skills folder already has skills in it, clone to a temporary folder inste
 **Manual (all skills at once).**
 
 ```bash
-cd "$HOME/Documents/My Tableau Repository (Beta)/Tableau Agent/skills" && git pull
+cd "$HOME/Documents/My Tableau Repository/Tableau Agent/skills" && git pull
 ```
 
 Then run `/reload-skills` in Tableau Studio. Check a skill's `CHANGELOG.md` to see what changed. Each skill's version is in its `VERSION` file.

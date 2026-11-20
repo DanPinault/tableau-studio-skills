@@ -124,7 +124,7 @@ Work out which workbook the user means, then get a path for step 3:
 
 | The user means | What to do |
 |---|---|
-| The workbook open in Studio (the default when they don't name one) | Call `workbook-export-as` with `format: "packaged-workbook"` and an absolute `filePath` ending in `.twbx`: `~/Documents/My Tableau Repository (Beta)/Workbooks/<Workbook Name>.twbx` (expand `~`). This writes a copy and leaves the open workbook pointing where it was. If `workbook-export-as` isn't available, call `save-workbook` with the same `filePath`. |
+| The workbook open in Studio (the default when they don't name one) | Call `workbook-export-as` with `format: "packaged-workbook"` and an absolute `filePath` ending in `.twbx`: `~/Documents/My Tableau Repository/Workbooks/<Workbook Name>.twbx` (expand `~`). This writes a copy and leaves the open workbook pointing where it was. If `workbook-export-as` isn't available, call `save-workbook` with the same `filePath`. |
 | A `.twbx` file they name | Use that path as-is. Don't open or re-save it. |
 | A folder with a `.twb` and a `Packages/` folder (an unzipped workbook or data-app workspace) | Use the folder path; the script zips it into a `.twbx`, keeping `Data/` and `Resources/.agents/`. |
 | A `.twb` file on its own | Look for a `Packages/` folder next to it and use the folder that holds both. If there isn't one, the extension files are missing: ask the user where they are. |

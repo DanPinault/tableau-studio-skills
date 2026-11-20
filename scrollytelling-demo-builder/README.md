@@ -73,7 +73,7 @@ build — it flags every point where it needs you.
    ```
 
    If you're on the beta build, the path is
-   `~/Documents/My Tableau Repository (Beta)/Tableau Agent/skills/`. Create the
+   `~/Documents/My Tableau Repository/Tableau Agent/skills/`. Create the
    `skills/` folder if it doesn't exist. The final layout should be:
 
    ```

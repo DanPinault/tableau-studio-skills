@@ -65,7 +65,7 @@ the same meaning and stay one line:
 ## Inventory the installed Extensions folder (option 3)
 
 - Read the local Extensions folder. **Mac:**
-  `/Users/<user>/Documents/My Tableau Repository (Beta)/Extensions/*.trex`.
+  `/Users/<user>/Documents/My Tableau Repository/Extensions/*.trex`.
   **Windows:** `C:\Users\<user>\Documents\My Tableau Repository\Extensions\*.trex`
   (no "(Beta)" segment on most Windows installs — confirm the exact folder name
   if the default path returns nothing). For each `.trex`, extract the

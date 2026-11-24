@@ -1,9 +1,16 @@
 ---
 name: publish-packaged-extension
-description: Use when the user wants to publish a workbook to Tableau Cloud or Tableau Server, whether it is the workbook open in Studio, a .twbx file they name, or an unzipped data-app folder (a .twb next to a Packages/ folder). Phrases like "publish this workbook", "publish this workbook to Tableau", "publish this with the extension", "publish my data app", "publish Sales.twbx to Finance", "publish this workbook to project X as Y", "the extension disappears when I publish", or "Cloud says the embedded extension was removed when the workbook was downgraded". Checks the sign-in and connection to the connected site, always asks for the site, project and name before publishing, and publishes with publish-workbook. When the workbook carries a packaged extension it first runs a bundled fix-up script on a copy so the extension survives, then checks the published copy. Do NOT use to build or edit the extension itself (use author-extension or scrollytelling-demo-builder), to speed up or clean up a workbook before publishing (use workbook-optimizer), or to build charts and dashboards (use tableau-desktop-authoring); this skill only publishes and checks the published copy.
+description: "Use when publishing a workbook with a packaged extension or data app to Tableau Cloud, so Cloud doesn't replace it with 'Embedded extension removed'. Fixes a copy, confirms site, project and name, publishes, verifies. Not for plain publishes (tableau-workbook-authoring) or building extensions."
 ---
 
 # Packaged extension publish
+
+Contents: [Running the scripts](#running-the-scripts-mac-and-windows) ·
+[Tools](#tools) · [Scope](#scope) · [Cloud or Server](#cloud-or-server) ·
+[Steps 0–7](#steps) · [When something fails](#when-something-fails) ·
+[Common mistakes](#common-mistakes) · [Check before sending](#check-before-sending) ·
+[Clean up](#clean-up) · [Large workbooks and batches](#large-workbooks-and-batches) ·
+[Notes](#notes)
 
 This is a Tableau Studio agent skill. It runs inside Studio's agent and
 publishes through Studio's `tableau-web` MCP, which uses Studio's own sign-in
@@ -21,21 +28,42 @@ route: Studio's publish, the web **Upload Workbook**, or `publish-workbook` on a
 unmodified file. The fix is to resolve the switch to the extension branch in a
 **copy** before publishing. Workbooks built outside Studio usually have no
 switch; the script then copies them unchanged, so always run it. Background is
-in `references/why-extensions-are-removed.md`; read it only if the user asks why.
+in `skill-expertise/why-extensions-are-removed.md`; read it only if the user asks why.
 
-All file work goes through `scripts/fix_packages_for_publish.py` (Python 3, standard library
+All file work goes through `skill-expertise/fix_packages_for_publish.py` (Python 3, standard library
 only, no sign-in). It prints JSON and exits non-zero on failure. Run it as:
 
 ```
-python3 "<this skill folder>/scripts/fix_packages_for_publish.py" <command> ...
+python3 "<this skill folder>/skill-expertise/fix_packages_for_publish.py" <command> ...
 ```
+
+## Running the scripts (Mac and Windows)
+
+The scripts need Python 3, standard library only (nothing to `pip install`).
+Find the interpreter once per session and reuse it: run `python3 --version`; if
+that fails or opens the Microsoft Store, try `py -3 --version`, then
+`python --version` (it must report 3.x). Wherever this skill says `python3`, use
+the first one that worked. If none works, stop and tell the user to install
+Python 3 from python.org (on Windows, tick "Add python.exe to PATH") or with
+`winget install Python.Python.3.12`, then restart Studio. Never install it
+yourself. Quote paths that contain spaces.
+
+On Windows, call `curl.exe`, not `curl`: PowerShell maps `curl` to a different
+command. Step 5 gives the Windows and Mac forms.
+
+**Never write over an existing file.** This applies to the export (step 2), the
+fixed-for-publish copy (step 3) and the server copy (step 6). If the target
+file already exists, add a timestamp before `.twbx`, for example
+`<Workbook Name>.export-20261123-142501.twbx`, and use that path. The script
+refuses an existing `--out`; never pass `--force` unless the user asked to
+replace that exact file.
 
 ## Tools
 
 Use only these:
 
 - `tableau-web`: `list-projects`, `list-workbooks`, `publish-workbook`, `request-workbook-upload`, `download-workbook`
-- `desktop`: `workbook-export-as` (or `save-workbook`), only to get the open workbook as a file
+- `desktop`: `workbook-export-as` (or `save-workbook`, with the step 2 warning), only to get the open workbook as a file
 - Shell: `python3` for the script, `curl` only for the staged upload in step 5
 - Only when the same message also asks to edit the extension (see Scope):
   the tools `author-extension` prescribes, such as `reload-extensions`. Do
@@ -52,23 +80,16 @@ extension, and checking the server copy. This includes workbooks with several
 extension zones or several packages: the script handles all of them, and the
 step 6 comparison covers every zone and package ID.
 
+Authoring skills (for example tableau-workbook-authoring,
+tableau-data-app-authoring, author-extension or scrollytelling-demo-builder)
+should hand off to this skill to publish a workbook with a packaged extension.
+A plain publish with no packaged extension usually goes through
+tableau-workbook-authoring, but if the user is already here, publish it with
+this skill's plain path (step 3).
+
 Out of scope, and what to do instead:
 
-- Tableau Server: the publish steps work on whichever site the connected
-  `tableau-web` tools reach, so a workbook without a packaged extension is
-  published the same way (step 3 branch, then the step 4 question). Packaged
-  extensions are a Tableau Cloud beta. Decide Cloud or Server with this rule,
-  using the host of any workbook, project or view link you have seen:
-  1. The host is `online.tableau.com` or ends with `.online.tableau.com`
-     (for example `us-east-1.online.tableau.com`): Tableau Cloud.
-  2. Any other host: treat it as Tableau Server and say which host you saw. If
-     the user says it is Tableau Cloud, believe them and go on as Cloud.
-  3. No link seen yet: assume Cloud, and decide again as soon as a link
-     appears (the step 5 publish result has one). Don't ask.
-  If the workbook has a packaged extension and the site is Tableau Server, say
-  the extension won't work there and ask whether to publish the original export
-  as-is. Never publish the fixed-for-publish copy to Tableau Server. Publishing
-  to Tableau Server hasn't been tested.
+- A packaged extension on Tableau Server: see **Cloud or Server** below.
 - Another site than the one Studio is signed in to: tell the user to switch
   sites in Studio, then ask again.
 - Building or editing the extension: hand off to author-extension or
@@ -76,17 +97,53 @@ Out of scope, and what to do instead:
   the edit first by following `author-extension`, tell the user what changed
   and that you haven't seen it render, then continue with the publish steps so
   the published copy includes the edit.
-- A workbook with no packaged extension: call `publish-workbook` directly.
+- A workbook with no packaged extension: use the step 3 plain path (no fix).
 - Repairing a workbook that exists only on the site: ask for the original file.
 - Changing site settings, package permissions or data source access: these need
   a site admin. Only point the user to them (step 7).
+
+## Cloud or Server
+
+Packaged extensions are a Tableau Cloud beta; Tableau Server doesn't support
+them yet. The publish steps work on whichever site the connected `tableau-web`
+tools reach, so a workbook without a packaged extension is published the same
+way on either (step 3 branch, then the step 4 question). Publishing to Tableau
+Server isn't verified; check the result in a browser.
+
+Decide Cloud or Server with this rule, using the host of any workbook, project
+or view link you have seen:
+
+1. The host is `online.tableau.com` or ends with `.online.tableau.com`
+   (every Tableau Cloud pod and region, for example `10ay.online.tableau.com`
+   or `us-east-1.online.tableau.com`): Tableau Cloud.
+2. Any other host: don't assume either. A Cloud site can use a custom domain,
+   so name the host you saw and add "Is this Tableau Cloud?" to the step 4
+   question. Go on as Cloud only if the user says yes; otherwise treat it as
+   Tableau Server.
+3. No link seen yet: get one before step 5. Call `list-workbooks` with a
+   limit of 1 and read the host from its link. If there are no workbooks or
+   no link, add "Is this Tableau Cloud?" to the step 4 question and wait
+   for the answer. Never decide after publishing.
+
+If the workbook has a packaged extension and the site is Tableau Server, say
+the extension won't work there and ask whether to publish the original export
+as-is. Never publish the fixed-for-publish copy to Tableau Server.
 
 ## Steps
 
 ### 0. Order of work
 
 Start with the steps below; no opening sentence is required. Carry on without
-waiting; the only stop is step 4. The order is fixed: finish step 1 (sign-in
+waiting, except at these stops:
+
+- the step 4 question (site, project and workbook name);
+- "Is this Tableau Cloud?" when the host doesn't settle it (**Cloud or Server**),
+  asked as part of step 4;
+- on Tableau Server with a packaged extension, whether to publish the original
+  export as-is (**Cloud or Server**).
+
+For several workbooks or a large file, also follow **Large workbooks and
+batches**. The order is fixed: finish step 1 (sign-in
 check) before step 2 (export), and never export or run the script until the
 check has passed.
 
@@ -99,7 +156,7 @@ publish time.
    aren't, stop: the Tableau MCP connection isn't loaded.
 2. Call `list-projects` with `capability: "Write"` and no `limit`, so the
    result holds every project name, not just the count. Keep the full result
-   for step 4. Step 4 shows every name, so a count alone is not enough.
+   for step 4, which shows the names, so a count alone is not enough.
    If the user named a project that isn't in the result, say so in the same
    message and show the full alphabetical project list with the total
    (step 4 rules). Never end with only an offer to list them or to create
@@ -124,21 +181,36 @@ Work out which workbook the user means, then get a path for step 3:
 
 | The user means | What to do |
 |---|---|
-| The workbook open in Studio (the default when they don't name one) | Call `workbook-export-as` with `format: "packaged-workbook"` and an absolute `filePath` ending in `.twbx`: `~/Documents/My Tableau Repository/Workbooks/<Workbook Name>.twbx` (expand `~`). This writes a copy and leaves the open workbook pointing where it was. If `workbook-export-as` isn't available, call `save-workbook` with the same `filePath`. |
+| The workbook open in Studio (the default when they don't name one) | Tell the user the export includes any unsaved changes in the open workbook. Call `workbook-export-as` with `format: "packaged-workbook"` and the absolute export path below. This writes a copy and leaves the open workbook pointing where it was. Prefer it. Only if `workbook-export-as` isn't available, call `save-workbook` with the same `filePath`, and first tell the user it may point the open workbook at the new file, like Save As. |
 | A `.twbx` file they name | Use that path as-is. Don't open or re-save it. |
 | A folder with a `.twb` and a `Packages/` folder (an unzipped workbook or data-app workspace) | Use the folder path; the script zips it into a `.twbx`, keeping `Data/` and `Resources/.agents/`. |
 | A `.twb` file on its own | Look for a `Packages/` folder next to it and use the folder that holds both. If there isn't one, the extension files are missing: ask the user where they are. |
 | A workbook that's only on the site | Tell the user that the published copy can't be repaired, because the server already swapped the extension for text when it arrived. Ask for the original file instead. |
 
+Export path: `<temp>/publish-packaged-extension/<Workbook Name>.export.twbx`,
+where `<temp>` is the system temp folder (`$TMPDIR` on Mac, `%TEMP%` on
+Windows). Create the `publish-packaged-extension` folder if it's missing. If
+the workbook was opened from a file, you can export next to that file instead,
+with the same file name. Apply the overwrite rule (Running the scripts).
+
 ### 3. Make the fixed-for-publish copy
 
+**Reuse.** If this conversation already made a fixed-for-publish copy from the
+same `.twbx` the user named, that copy still exists, and the input's size and
+modified time match the `in_size` and `in_mtime` from that run, reuse that
+copy and its result and tell the user you're reusing it. Check with
+`python3 -c "import os,sys; s=os.stat(sys.argv[1]); print(s.st_size, s.st_mtime)" "<input>"`.
+Otherwise, or for the open workbook or a folder, make a new copy (with a
+timestamped `--out` if the old one exists).
+
 ```
-python3 "<this skill folder>/scripts/fix_packages_for_publish.py" fix --in "<path from step 2>"
+python3 "<this skill folder>/skill-expertise/fix_packages_for_publish.py" fix --in "<path from step 2>"
 ```
 
 When you tell the user about it, call it the "fixed-for-publish copy".
 It writes `<name>.fixed-for-publish.twbx` next to the input (`--out` to choose another path)
-and never changes the original. It also runs the checks Tableau applies when the
+and never changes the original. It never leaves a partial file: on failure, the
+output is not created and an existing file is left alone. It also runs the checks Tableau applies when the
 workbook is published. Read the JSON:
 
 | Field | Meaning |
@@ -147,24 +219,34 @@ workbook is published. Read the JSON:
 | `out` | Absolute path of the copy to publish (`null` when `ok` is false; no copy is left behind) |
 | `switch_markers_resolved` | How many switch markers were removed |
 | `already_clean` | `true` when the input had no switch, so the copy is unchanged |
+| `in_size`, `in_mtime` | Size and modified time of an input file (`null` for a folder), for the reuse check |
 | `packages` | Package IDs found under `Packages/` |
+| `no_packages` | `true` when the workbook has no `Packages/` folder (`ok` is false, `status` is `"no_packages"`) |
 | `extension_zones` | Extension zones in the copy |
 | `problems` | Things that would make publishing fail or leave the app without data. Any entry means `ok` is false |
 | `warnings` | Runtime risks that don't block publishing: undeclared origins, secret-looking values, version mismatches |
 
-If the workbook has no `Packages/` folder and no extension zones, it has no
-packaged extension, so there is nothing to fix. Say so in one sentence, offer
-to publish it as-is with `publish-workbook` (the original export, no fixed-for-publish
-copy, never Desktop's Publish dialog), and ask the step 4 question first.
-Publish only after they reply. Then skip step 6's extension comparison and
-end with "Published" and the link. Don't offer to delete a `.fixed-for-publish.twbx`,
-because none was made.
+Map the result like this:
 
-If `ok` is false for any other reason, stop and tell the user what the `error`, `problems` or counts
-say, in plain words. Usual causes: the workbook has no `Packages/` folder, the
-extension was never placed on a dashboard or worksheet (`extension_zones` is 0),
-or the file was already downgraded (`fallback_text` is true with no switch), in
-which case the original Studio file is needed.
+| Result | What to do |
+|---|---|
+| `ok: true` | Go on to step 4 with the `out` path. |
+| `no_packages: true`, `extension_zones` 0 | No packaged extension, nothing to fix. Use the plain path below. |
+| `no_packages: true`, `extension_zones` above 0 | The zones are URL (hosted) extensions, which load from their own server. Tell the user hosted extensions don't need this fix, then use the plain path below. |
+| `error` says the output already exists | Rerun with a timestamped `--out` (the overwrite rule in Running the scripts). |
+| `status: "multiple_workbooks"` | The file holds more than one `.twb`, listed in `multiple_workbooks`. Show the names and ask which workbook they mean; don't pick one. Then ask them to open that workbook in Studio and go back to step 2 to export it on its own. |
+| Any other `ok: false` | Stop. Tell the user what the `error`, `problems` or counts say, in plain words. |
+
+Plain path: publish the original export as-is with `publish-workbook` (no
+fixed-for-publish copy, never Desktop's Publish dialog). Say so in one
+sentence and ask the step 4 question first. Publish only after they reply.
+Then skip step 6's extension comparison and end with "Published" and the link.
+Don't offer to delete a `.fixed-for-publish.twbx`, because none was made.
+
+Usual causes of any other `ok: false`: the extension was never placed on a
+dashboard or worksheet (`extension_zones` is 0), or the file was already
+downgraded (`fallback_text` is true with no switch), in which case the original
+Studio file is needed.
 
 If there are `warnings`, tell the user each one briefly and carry on. A secret
 warning matters most: anyone who can download the workbook can read that value.
@@ -175,6 +257,8 @@ angle-bracket parts, with nothing before it:
 > I made a fixed-for-publish copy of <workbook name>: <n> extension zones, package <package IDs, comma-separated>, <no problems or warnings | each warning in a few words>. Nothing is published yet.
 
 > <workbook name> has no packaged extension, so there's nothing to fix. I can publish the plain export as it is. Nothing is published yet.
+
+> <workbook name> uses hosted extensions, which don't need this fix. I can publish the export as it is. Nothing is published yet.
 
 ### 4. Ask for the site, project and workbook name
 
@@ -188,7 +272,7 @@ are fixed, so two runs give the same question:
 
 - **Project default:** the project the user named in this conversation. If
   they named none, suggest nothing and list every publishable project from
-  the step 1 result, never a subset. Sort them with this exact rule: compare
+  the step 1 result, never a subset (except the over-40 rule below). Sort them with this exact rule: compare
   names case-insensitively after removing one leading dot; break ties by the
   original name. Write the sorted names out one by one and check each against
   the previous one before sending. A missing project or a wrong parent is a
@@ -198,8 +282,12 @@ are fixed, so two runs give the same question:
   print every name in the message: a count without the names is wrong. With
   no project default, don't offer "Reply yes": ask them to reply with a
   project (and any name change).
-- **Workbook name default:** the input file's name without `.twbx` and
-  without `.fixed-for-publish` (for the open workbook, its name in Studio).
+  Over 40 projects: show the total and only the first 10 in that sort order,
+  and ask the user to type a project name to search. Match their reply with
+  the Project rules below.
+- **Workbook name default:** the input file's name without `.twbx`,
+  `.export`, `.fixed-for-publish` or a timestamp suffix (for the open
+  workbook, its name in Studio).
 
 Use this template exactly, filling only the angle-bracket parts. Put the
 project names on separate lines, in sorted order:
@@ -209,7 +297,7 @@ project names on separate lines, in sorted order:
 > - **Workbook name:** <workbook name>
 > - **Project:** <suggested project, or "choose one of the <total> below">
 >
-> <one project per line, "<name>" or "<name> (in <parent>)", only when there is no project default>
+> <one project per line, "<name>" or "<name> (in <parent>)", only when there is no project default (first 10 and "Type a project name to search" when over 40)>
 >
 > <With a project default: Reply "yes" to use these, or tell me what to change. Without one: Reply with a project, plus a different name if you want one.>
 > Before publishing, I'll check whether a workbook with that name already exists there.
@@ -244,6 +332,10 @@ project names on separate lines, in sorted order:
 
 ### 5. Publish the fixed-for-publish copy
 
+Before this call, the site must already be confirmed as Tableau Cloud (the
+**Cloud or Server**). If it isn't, stop: never publish the
+fixed-for-publish copy until it is.
+
 Call `publish-workbook` with:
 
 - `workbookFilePath`: the `out` path from step 3 (never the original)
@@ -258,8 +350,10 @@ use the staged upload instead:
    returns `workbookUploadId`, `uploadUrl`, `requiredHeaders`, `maxSizeBytes`
    and `expiresAt`. Check the file is smaller than `maxSizeBytes`.
 2. Upload the file **in your very next call**: the URL can expire within a
-   minute (check `expiresAt`). Pass every header in `requiredHeaders`:
-   `curl -fsS -X PUT -H "<name>: <value>" ... --data-binary @"<out>" "<uploadUrl>"`
+   minute (check `expiresAt`). Pass every header in `requiredHeaders`.
+   Mac: `curl -fsS -X PUT -H "<name>: <value>" ... --data-binary @"<out>" "<uploadUrl>"`
+   Windows (PowerShell can't parse `@"<out>"`; put the `@` inside the quotes):
+   `curl.exe -fsS -X PUT -H "<name>: <value>" ... --data-binary "@C:\path\file.twbx" "<uploadUrl>"`
    If it fails with 403 or "expired", request a new upload and try once more.
    Never show `uploadUrl` to the user; it's a signed link.
 3. Call `publish-workbook` with `workbookUploadId` instead of
@@ -278,10 +372,14 @@ Read the result:
 Call `download-workbook` with the published workbook's ID. It returns either a
 local file or a short-lived signed link (a resource link). For a link, fetch it
 **in your very next call**, as with the upload URL, and don't show it to the user:
-`curl -fsS -o "<folder of out>/server-copy.twbx" "<link>"`. Then run:
+`curl -fsS -o "<server copy path>" "<link>"` (`curl.exe` on Windows). Use
+an absolute path with a timestamp, so it never replaces an earlier file:
+`<temp>/publish-packaged-extension/<name>.server-copy-<timestamp>.twbx`, for
+example `<name>.server-copy-20261123-142501.twbx`, with `<temp>` as in step 2.
+If `download-workbook` returns a local file, use its path as-is. Then run:
 
 ```
-python3 "<this skill folder>/scripts/fix_packages_for_publish.py" verify --in "<downloaded>.twbx"
+python3 "<this skill folder>/skill-expertise/fix_packages_for_publish.py" verify --in "<absolute server copy path>"
 ```
 
 `ok: true` means the server kept the extension zones and has no fallback text.
@@ -338,8 +436,8 @@ order. All but the last are in **Site Settings > Packages** and need a site admi
    and View, Connect and **API access** on each published data source. API access
    is the one most often missed.
 
-Packaged extensions are a Tableau Cloud beta; Tableau Server doesn't support
-them yet. Packaged extensions need Tableau version 2026.3 or higher. If the
+Packaged extensions need Tableau version 2026.3 or higher, on Tableau Cloud
+only (see **Cloud or Server**). If the
 extension won't load, ask which version the site and Studio are on, and treat
 anything older than 2026.3 as the likely cause.
 
@@ -348,13 +446,17 @@ anything older than 2026.3 as the likely cause.
 | Symptom | What it means and what to do |
 |---|---|
 | `workbook-export-as` fails or the workbook has no file yet | Ask the user to save the workbook in Studio, then retry the export once. |
+| The export target already exists, or its folder is missing | Add a timestamp to the file name (overwrite rule in Running the scripts), or create the temp subfolder, then export again. Never write over the existing file. |
+| The script fails partway | No partial file is left and the original is untouched. Report the `error` and stop; don't retry with `--force`. |
+| PowerShell rejects the upload `curl` (a parse error near `@`) | Use the Windows form from step 5: `curl.exe` with `"@C:\path\file.twbx"`. |
 | `publish-workbook` says the name already exists | Ask whether to replace it. Retry with `overwrite: true` only on a yes. |
 | `publish-workbook` says you lack Overwrite or Publish rights | Tell the user they need those on the project. Offer a different name or project. |
+| `publish-workbook` times out or gives an unclear result | Don't re-send it. Call `list-workbooks` with `filter: "name:eq:<name>"` and look in the chosen project. If it's there (and, when replacing, was updated just now), report "Published, not verified" with its link. If not, report "Not published:" with the reason and ask before trying again. |
 | Upload `curl` returns 403 or "expired" | Request a new upload and retry once. A second failure: stop and report. |
 | `download-workbook` link expired or fails | Call `download-workbook` once more. If it still fails, skip the check and say so. |
 | `verify` returns `ok: false` | Report the counts. Don't call it published-and-working. |
 | The permission prompt for the script or the export was declined | Stop and don't retry. Say in one or two sentences what the script does (reads the export, writes a separate copy, no sign-in, original untouched) and that nothing was published. Ask them to say "go" to run it again and approve the prompt. Offer to publish the plain export only if they ask, and say a packaged extension would likely be removed. |
-| The project the user named isn't in the step 1 list | Say they can't publish there, show the full alphabetical project list from step 1 in the same message and ask again. Don't pick another project. |
+| The project the user named isn't in the step 1 list | Say they can't publish there, show the alphabetical project list from step 1 (step 4 rules, including over 40) in the same message and ask again. Don't pick another project. |
 
 ## Common mistakes
 
@@ -372,18 +474,18 @@ anything older than 2026.3 as the likely cause.
   verified" on its own line, followed by its link (Step 7).
 - Publishing before a requested extension edit is made. Edit first, then
   export and fix, so the published copy includes the edit (Scope).
-- Offering to delete the original export (`<name>.twbx`) when the user stops
-  or finishes. Only the `.fixed-for-publish.twbx` and `server-copy.twbx` may be offered
+- Offering to delete the original export (`<name>.export.twbx`) when the user stops
+  or finishes. Only the `.fixed-for-publish.twbx` and `.server-copy-<timestamp>.twbx` may be offered
   for deletion (Clean up).
 
 ## Check before sending
 
 Run this on the step 4 question and on the final message, silently, before you
 send either:
-1. The step 4 message starts with one of the two step 3 sentences, then the
+1. The step 4 message starts with one of the step 3 sentences, then the
    question follows the step 4 template: site, name, project, then
    (with no project default) every project from step 1 on its own line, sorted
-   by the rule above, with the total and "(in <parent>)" on nested ones. With
+   by the rule above (first 10 when over 40), with the total and "(in <parent>)" on nested ones. With
    no project default it says "Reply with a project", not "Reply yes".
 2. The final message uses exactly "Published and verified" or "Published, not
    verified" (or "Not published:" for a skipped one), one block per workbook,
@@ -401,54 +503,16 @@ question), end with exactly this, and ask about deleting only once:
 If no fixed-for-publish copy was made, end with "Stopped. Nothing was
 published." and nothing more. Don't list the original export as deletable.
 
-After step 6, offer to delete the local `.fixed-for-publish.twbx` and `server-copy.twbx`.
+After step 6, offer to delete the local `.fixed-for-publish.twbx` and `.server-copy-<timestamp>.twbx`.
 Both can contain secret-looking values the script warned about. Delete them
 only if the user says yes, and never delete the original export.
 
 ## Large workbooks and batches
 
-- **Size.** Before step 5, note the size of the `out` file. If the tool or the
-  staged upload reports a size limit (`maxSizeBytes`) and the file is over it,
-  stop. Tell the user the file size and the limit, and offer to publish
-  without the packaged extract if they can refresh it on the site, or to
-  publish the data source separately. Don't strip data from the copy yourself.
-- **Slow uploads.** The staged upload link expires within about a minute. For
-  a large file, request the upload and run `curl` back to back with no other
-  step in between. If it expires, request a new one once, then stop and report.
-- **Many packages or zones.** The script reports them all. Step 6 compares every
-  zone count and package ID, so a missing one is a failed check. List the
-  missing IDs in plain words.
-- **Batches.** For several workbooks, do the sign-in check and the project
-  question once. Then fix, publish and verify one workbook at a time, and
-  report a status line for each ("Published and verified" or "Published, not
-  verified"). A failure in one workbook doesn't stop the rest. Never re-send a
-  publish that returned an unclear result: check the site with `list-workbooks`
-  first.
-
-## Update check (last step)
-
-Run this once, after the step 7 hand-back message or after a clean stop (for
-example the user replies "stop" at the step 4 question). Never run it before or
-during the publish steps, and never delay the step 4 question for it.
-
-```
-python3 "<this skill folder>/scripts/check_update.py" check
-```
-
-It prints JSON and never fails. Read `status`:
-
-- `up_to_date`, `unknown` (offline) or `snoozed`: say nothing about updates.
-- `update_available`: add a short note after your result: a newer version of this
-  skill is available (`local` → `remote`), with a one-line summary of `changes`.
-  Ask which they want, as plain text at the end of your message (do not use
-  `ask-user`): **install now**, **skip this time**, or **don't remind me about
-  this version**. Wait for the answer.
-  - Install: run `python3 "<this skill folder>/scripts/check_update.py" apply`.
-    On `ok: true`, tell them it updated (the old copy is saved at `backup`) and
-    ask them to run `/reload-skills`. On `ok: false`, show the error and keep the
-    current version.
-  - Skip: do nothing more.
-  - Don't remind me: run `... check_update.py snooze`.
+Read `skill-expertise/batches-and-large-workbooks.md` and follow it before
+step 4 when the user publishes several workbooks, and before step 5 when the
+file is large (hundreds of MB), an upload reports a size limit, or the
+workbook has many packages or zones.
 
 ## Notes
 

@@ -42,18 +42,19 @@ build — it flags every point where it needs you.
 ## Requirements
 
 - **Tableau Studio** (the in-Desktop agent) — this is where you invoke the skill.
-- A Tableau **published datasource** to build from. (v1 starts from an existing
-  datasource; it does not generate one from scratch.)
-- **Python 3** on your PATH — the bundler uses the standard library only, so
-  there is **nothing to `pip install`**. Check with `python3 --version`.
+- A Tableau **published datasource** to build from. (It starts from an existing
+  published datasource; it doesn't generate one.)
+- **Python 3** — the scripts use the standard library only, so there is
+  **nothing to `pip install`**. Check with `python3 --version` (on Windows,
+  `py -3 --version` or `python --version`).
 - **Packaged mode:** a Tableau Cloud site with **Settings > Packages > Allow
   Packages on this Site** enabled (site admin), a published datasource with
   VizQL Data Service enabled, and a **Personal Access Token**. Run
-  `python3 assets/package_extension.py configure` then `store-secret` once; on
-  macOS the secret goes in Keychain, elsewhere `export TABLEAU_PAT_SECRET` in
-  your shell. The secret never goes in chat or files. Note: neither Tableau
-  Studio (build 26.1026) nor Tableau Desktop can open a packaged workbook yet
-  (error D2E8DA72), so the packaged story is viewed and edited only through
+  `python3 skill-expertise/package_extension.py configure` once, then save the
+  secret with `store-secret`: it goes to Keychain on Mac, or Windows Credential
+  Manager on Windows (run it in PowerShell; an environment-variable fallback is
+  in `skill-expertise/packaged-extension.md`, Prerequisites). The secret never goes in chat or files. Note: neither Tableau
+  Studio nor Tableau Desktop can open a packaged workbook (error D2E8DA72), so the packaged story is viewed and edited only through
   Tableau Cloud and the skill's scripts. Don't download it to edit in Desktop;
   re-run the build instead.
 - **Hosted mode:** a **public, framable static host** for the finished HTML (e.g. Cloudflare
@@ -62,7 +63,7 @@ build — it flags every point where it needs you.
   headers (`X-Frame-Options` / CSP), and be reachable from the presenter's
   laptop. A gated/internal host will not work as the iframe source.
 
-## Install
+## Install and update
 
 1. **Unzip** `scrollytelling-demo-builder.zip`.
 2. **Move the `scrollytelling-demo-builder/` folder** into your Tableau Agent
@@ -72,24 +73,28 @@ build — it flags every point where it needs you.
    ~/Documents/My Tableau Repository/Tableau Agent/skills/scrollytelling-demo-builder
    ```
 
-   If you're on the beta build, the path is
-   `~/Documents/My Tableau Repository/Tableau Agent/skills/`. Create the
+   If you're on the beta build, the repository folder is named
+   "My Tableau Repository (Beta)", so the path is
+   `~/Documents/My Tableau Repository (Beta)/Tableau Agent/skills/`. Create the
    `skills/` folder if it doesn't exist. The final layout should be:
 
    ```
    Tableau Agent/skills/scrollytelling-demo-builder/
      ├─ SKILL.md
      ├─ README.md            (this file)
-     ├─ VERSION, CHANGELOG.md
-     ├─ assets/              (templates, vendor libs, .trex examples,
-     │                        build_standalone.py, package_extension.py)
-     └─ references/          (style-guide.md, build-procedure.md,
-                              packaged-extension.md, output-styles.md,
-                              sample-gallery.md)
+     └─ skill-expertise/     (procedure and style references, Python scripts,
+                              story templates, vendored libraries,
+                              example .trex manifests, license notices)
    ```
+
+   Templates, vendored libraries and example manifests are stored as `.txt`
+   files (for example `coo-brief.html.txt`); the scripts read them as-is.
 
 3. **Reload skills** — run `/reload-skills` in Tableau Studio, or restart Studio.
 4. Confirm the skill appears in the available-skills list.
+
+After you update or edit any file in this skill, run `/reload-skills` in Tableau
+Studio (or restart Studio) so the change takes effect.
 
 ## Start using it
 
@@ -129,7 +134,7 @@ Maximum), then walks the build end to end.
 
 ## Tips
 
-- The vendored COO/CFO templates in `assets/public/` are a **mechanics and style
+- The vendored COO/CFO templates in `skill-expertise/` are a **mechanics and style
   reference** (animation, D3 patterns, Demo/Live toggle, live-bind plumbing) —
   not a page to fill in. Every number, field, threshold, and chapter is adapted
   to your datasource; nothing from the sample story transfers.
@@ -137,17 +142,19 @@ Maximum), then walks the build end to end.
   standalone page, and lights up in Live mode when the extension is embedded
   (packaged, or hosted with the floated `feed_data` sheet). That's by design — it never fabricates
   row-level data.
-- Read `references/build-procedure.md` and `references/style-guide.md` for the
+- Read `skill-expertise/build-procedure.md` and `skill-expertise/style-guide.md` for the
   full procedure and the function-level anchors; the skill reads them too.
 
 ## Third-party code
 
-- `assets/vendor/d3.min.js` — D3, ISC license.
-- `assets/vendor/tableau.extensions.1.latest.js` and
-  `assets/vendor/tableau.extensions.data-apps.min.js` — the Tableau Extensions
+- `skill-expertise/d3.min.js.txt` — D3, ISC license.
+- `skill-expertise/tableau.extensions.1.latest.js.txt` and
+  `skill-expertise/tableau.extensions.data-apps.min.js.txt` — the Tableau Extensions
   API (the latter is the Data Apps build from the `tableau/tableau-mcp`
   templates), Apache License 2.0, © Tableau Software / Salesforce.
+- Full license texts are in `skill-expertise/THIRD-PARTY-NOTICES.md` and
+  `skill-expertise/apache-2.0-license.txt`.
 
 ## Support
 
-Questions or issues, ping the author who shared this zip.
+Report issues through Tableau Exchange.
